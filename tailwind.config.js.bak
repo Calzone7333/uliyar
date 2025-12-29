@@ -1,0 +1,18 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#0052cc', // Adjust based on "Bluecaller" theme, perhaps a strong blue
+          dark: '#003d99',
+        }
+      }
+    },
+  },
+  plugins: [],
+}

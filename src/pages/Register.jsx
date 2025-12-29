@@ -1,0 +1,185 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
+import { Mail, Lock, User, Briefcase, Building, Loader, Phone } from 'lucide-react';
+
+const Register = () => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        mobile: '',
+        password: '',
+        role: 'employee',
+        companyName: ''
+    });
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Redirect to OTP Verification with email/userId context
+                navigate(`/verify-otp?userId=${data.userId}&email=${formData.email}`);
+            } else {
+                setError(data.error || 'Registration failed');
+            }
+        } catch (err) {
+            setError('Something went wrong. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop")' }}>
+            {/* Dark Overlay */}
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px]"></div>
+
+            <div className="relative z-10 w-full max-w-md p-4 animate-in zoom-in duration-300 slide-in-from-bottom-8">
+                <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
+                    <div className="text-center mb-8">
+                        <div className="bg-primary w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg -rotate-3">
+                            <span className="text-white font-bold text-2xl">U</span>
+                        </div>
+                        <h2 className="text-3xl font-bold text-slate-900">Create Account</h2>
+                        <p className="text-slate-500 mt-2 font-medium">Join us to find better opportunities</p>
+                    </div>
+
+                    {/* Role Switcher */}
+                    <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8 border border-slate-200">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, role: 'employee' })}
+                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${formData.role === 'employee' ? 'bg-white shadow text-primary' : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'}`}
+                        >
+                            <User className="inline-block w-4 h-4 mr-1.5 mb-0.5" />
+                            I'm a Worker
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, role: 'employer' })}
+                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${formData.role === 'employer' ? 'bg-white shadow text-primary' : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'}`}
+                        >
+                            <Briefcase className="inline-block w-4 h-4 mr-1.5 mb-0.5" />
+                            I'm an Employer
+                        </button>
+                    </div>
+
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                        <div className="space-y-4">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <User className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <input
+                                    type="text"
+                                    required
+                                    className="block w-full pl-11 px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                                    placeholder="Full Name"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+
+                            {formData.role === 'employer' && (
+                                <div className="relative group animate-in slide-in-from-top-2 fade-in">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Building className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="block w-full pl-11 px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                                        placeholder="Company Name"
+                                        value={formData.companyName}
+                                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                    />
+                                </div>
+                            )}
+
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <input
+                                    type="email"
+                                    required
+                                    className="block w-full pl-11 px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                                    placeholder="Email address"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Phone className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <input
+                                    type="tel"
+                                    required
+                                    className="block w-full pl-11 px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                                    placeholder="Mobile Number"
+                                    value={formData.mobile}
+                                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <input
+                                    type="password"
+                                    required
+                                    className="block w-full pl-11 px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                                    placeholder="Password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl flex items-center justify-center font-medium border border-red-100">{error}</div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="group w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-primary hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            {isSubmitting ? <Loader className="animate-spin h-5 w-5" /> : "Send OTP"}
+                        </button>
+
+                        <div className="text-center pt-2">
+                            <p className="text-sm text-slate-500">
+                                Already have an account?{' '}
+                                <Link to="/login" className="font-bold text-primary hover:text-teal-700 hover:underline transition-all">Log in</Link>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+                <p className="text-center text-white/60 text-xs mt-6 font-medium">
+                    &copy; 2024 BlueCaller. Trust & Safety First.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default Register;
