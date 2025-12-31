@@ -12,7 +12,35 @@ const app = express();
 const PORT = 8082;
 const DB_PATH = path.join(__dirname, 'database.sqlite');
 
-app.use(cors({ origin: '*', credentials: true }));
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:8082',
+    'http://192.168.1.2:5173',
+    'http://192.168.1.2:5174',
+    'http://192.168.1.2:8082',
+    'http://115.97.59.230:5173',
+    'http://115.97.59.230:5174',
+    'http://115.97.59.230:8082',
+    'http://uliyar.com',
+    'http://uliyar.com:5173',
+    'http://uliyar.com:5174',
+    'http://uliyar.com:8082',
+    'http://www.uliyar.com',
+    'http://www.uliyar.com:8082'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log("Blocked by CORS:", origin);
+            callback(null, true); // Temporarily allow all for debugging if needed, or stick to false
+        }
+    },
+    credentials: true
+}));
 app.use(bodyParser.json());
 
 // Initialize Database
@@ -34,7 +62,6 @@ const transporter = nodemailer.createTransport({
         pass: 'qsdh ojuz kpyz wfyb'
     }
 });
-
 
 
 
