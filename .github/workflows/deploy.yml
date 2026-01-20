@@ -1,0 +1,56 @@
+name: Deploy Uliyar to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          set -e # Stop script on error
+
+          echo "Starting Deployment for Uliyar..."
+          
+          # Navigate to project directory
+          cd /var/www/uliyar
+
+          # Pull latest changes
+          sudo git fetch --all
+          sudo git reset --hard origin/main
+
+          # --- Backend Build (Node.js) ---
+          echo "Setting up Backend..."
+          cd server
+          sudo npm install
+          
+          # Restart Backend Process
+          echo "Restarting Backend Process..."
+          sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
+          
+          # --- Frontend Build (React) ---
+          echo "Building Frontend..."
+          cd .. 
+          # We are now in /var/www/uliyar (root) which serves as frontend root
+          sudo npm install
+          
+          # Fix potential memory issues
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          sudo npm run build
+          
+          # --- Finalize ---
+          sudo systemctl reload apache2
+
+          echo "Uliyar Deployment Complete!"
