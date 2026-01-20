@@ -13,46 +13,31 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # --- SETUP & BUILD BACKEND (Node) ---
-    - name: Set up Node.js 20 (Backend)
+    - name: Setup Node 20
       uses: actions/setup-node@v3
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: server/package-lock.json
 
-    - name: Install & Build Backend
+    - name: Build Backend & Frontend
       run: |
+        # Build Backend (Install deps)
         cd server
         npm install
-
-    # --- SETUP & BUILD FRONTEND (React) ---
-    - name: Set up Node.js 20 (Frontend)
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: package-lock.json
-
-    - name: Install & Build Frontend
-      run: |
+        cd ..
+        
+        # Build Frontend
         npm install
         npm run build
 
-    # --- PREPARE SERVER ---
-    - name: Prepare Server Directory
+    - name: Prepare Server
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
-        timeout: 60s
-        script: |
-          mkdir -p /home/ubuntu/uliyar_deploy_temp
-          chmod 777 /home/ubuntu/uliyar_deploy_temp
+        script: mkdir -p /home/ubuntu/uliyar_deploy_temp && chmod 777 /home/ubuntu/uliyar_deploy_temp
 
-    # --- DEPLOY TO EC2 ---
-    - name: Deploy Artifacts (SCP)
+    - name: Upload Artifacts
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.HOST }}
@@ -60,46 +45,35 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         source: "server/,dist/"
         target: "/home/ubuntu/uliyar_deploy_temp"
-        strip_components: 0
         timeout: 300s
 
-    - name: Switch Artifacts & Restart
+    - name: Deploy & Restart Background Services
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         timeout: 120s
-        command_timeout: 30m
         script: |
           set -e
-          echo "Deploying Uliyar..."
+          echo "Deploying..."
           
-          # 1. Update Backend
+          # Backend
           sudo cp -r /home/ubuntu/uliyar_deploy_temp/server/* /var/www/uliyar/server/
           cd /var/www/uliyar/server
           sudo npm install --production
           
-          # 2. Update Frontend
+          # Frontend
           sudo rm -rf /var/www/uliyar/dist/*
           sudo mkdir -p /var/www/uliyar/dist
           sudo cp -r /home/ubuntu/uliyar_deploy_temp/dist/* /var/www/uliyar/dist/
           
-          # Cleanup
-          sudo rm -rf /home/ubuntu/uliyar_deploy_temp
+          rm -rf /home/ubuntu/uliyar_deploy_temp
 
-          # 3. Restart Services
-          echo "Restarting Uliyar Backend..."
+          # Restart Backend
+          echo "Restarting Backend..."
           sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
-          
           sudo pm2 save
           
-          # 4. SSL Renewal Check
-          # Attempt to renew certificates if close to expiry
-          echo "Checking SSL Certificates..."
-          sudo certbot renew --quiet || echo "Certbot check skipped"
-          
-          # Reload Apache to pick up any changes
           sudo systemctl reload apache2
-          
-          echo "Uliyar Deployment Complete!"
+          echo "Done!"
