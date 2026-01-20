@@ -25,7 +25,6 @@ jobs:
       run: |
         cd server
         npm install
-        # No build step usually for raw Node.js, unless TypeScript. Assuming raw JS for now based on context.
 
     # --- SETUP & BUILD FRONTEND (React) ---
     - name: Set up Node.js 20 (Frontend)
@@ -37,7 +36,6 @@ jobs:
 
     - name: Install & Build Frontend
       run: |
-        # Frontend root is usually project root or client/, checking previous file says "cd .." so it's root
         npm install
         npm run build
 
@@ -50,7 +48,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         timeout: 60s
         script: |
-          echo "Creating temp directory..."
           mkdir -p /home/ubuntu/uliyar_deploy_temp
           chmod 777 /home/ubuntu/uliyar_deploy_temp
 
@@ -76,13 +73,10 @@ jobs:
         command_timeout: 30m
         script: |
           set -e
-          echo "Deploying Uliyar from temp..."
+          echo "Deploying Uliyar..."
           
           # 1. Update Backend
-          # Be careful not to overwrite logs or uploads if they are inside server/
-          # Copy new files over
           sudo cp -r /home/ubuntu/uliyar_deploy_temp/server/* /var/www/uliyar/server/
-          # Run install (fast usually) to ensure node_modules on server
           cd /var/www/uliyar/server
           sudo npm install --production
           
@@ -94,8 +88,16 @@ jobs:
           # Cleanup
           sudo rm -rf /home/ubuntu/uliyar_deploy_temp
 
-          # 3. Restart Services
+          # 3. Restart Services (Robust Check)
           echo "Restarting Uliyar Backend..."
-          sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
+          if sudo pm2 describe uliyar-backend > /dev/null; then
+              sudo pm2 restart uliyar-backend
+          else
+              # Must go to dir to ensure relative paths work
+              cd /var/www/uliyar/server
+              sudo pm2 start index.js --name uliyar-backend -- port 8082
+          fi
+          
+          sudo pm2 save
           
           echo "Uliyar Deployment Complete!"
