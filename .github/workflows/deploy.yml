@@ -93,4 +93,13 @@ jobs:
           sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
           
           sudo pm2 save
+          
+          # 4. SSL Renewal Check
+          # Attempt to renew certificates if close to expiry
+          echo "Checking SSL Certificates..."
+          sudo certbot renew --quiet || echo "Certbot check skipped"
+          
+          # Reload Apache to pick up any changes
+          sudo systemctl reload apache2
+          
           echo "Uliyar Deployment Complete!"
