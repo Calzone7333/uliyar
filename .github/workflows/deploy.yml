@@ -88,16 +88,9 @@ jobs:
           # Cleanup
           sudo rm -rf /home/ubuntu/uliyar_deploy_temp
 
-          # 3. Restart Services (Robust Check)
+          # 3. Restart Services
           echo "Restarting Uliyar Backend..."
-          if sudo pm2 describe uliyar-backend > /dev/null; then
-              sudo pm2 restart uliyar-backend
-          else
-              # Must go to dir to ensure relative paths work
-              cd /var/www/uliyar/server
-              sudo pm2 start index.js --name uliyar-backend -- port 8082
-          fi
+          sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
           
           sudo pm2 save
-          
           echo "Uliyar Deployment Complete!"
