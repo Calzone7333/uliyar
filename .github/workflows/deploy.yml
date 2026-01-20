@@ -5,52 +5,97 @@ on:
     branches: [ "main" ]
 
 jobs:
-  deploy:
-    name: Deploy to EC2
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Deploy via SSH
+    # --- SETUP & BUILD BACKEND (Node) ---
+    - name: Set up Node.js 20 (Backend)
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+
+    - name: Install & Build Backend
+      run: |
+        cd server
+        npm install
+        # No build step usually for raw Node.js, unless TypeScript. Assuming raw JS for now based on context.
+
+    # --- SETUP & BUILD FRONTEND (React) ---
+    - name: Set up Node.js 20 (Frontend)
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+
+    - name: Install & Build Frontend
+      run: |
+        # Frontend root is usually project root or client/, checking previous file says "cd .." so it's root
+        npm install
+        npm run build
+
+    # --- PREPARE SERVER ---
+    - name: Prepare Server Directory
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
+        timeout: 60s
         script: |
-          set -e # Stop script on error
+          echo "Creating temp directory..."
+          mkdir -p /home/ubuntu/uliyar_deploy_temp
+          chmod 777 /home/ubuntu/uliyar_deploy_temp
 
-          echo "Starting Deployment for Uliyar..."
+    # --- DEPLOY TO EC2 ---
+    - name: Deploy Artifacts (SCP)
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        source: "server/,dist/"
+        target: "/home/ubuntu/uliyar_deploy_temp"
+        strip_components: 0
+        timeout: 300s
+
+    - name: Switch Artifacts & Restart
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        timeout: 120s
+        command_timeout: 30m
+        script: |
+          set -e
+          echo "Deploying Uliyar from temp..."
           
-          # Navigate to project directory
-          cd /var/www/uliyar
-
-          # Pull latest changes
-          sudo git fetch --all
-          sudo git reset --hard origin/main
-
-          # --- Backend Build (Node.js) ---
-          echo "Setting up Backend..."
-          cd server
-          sudo npm install
+          # 1. Update Backend
+          # Be careful not to overwrite logs or uploads if they are inside server/
+          # Copy new files over
+          sudo cp -r /home/ubuntu/uliyar_deploy_temp/server/* /var/www/uliyar/server/
+          # Run install (fast usually) to ensure node_modules on server
+          cd /var/www/uliyar/server
+          sudo npm install --production
           
-          # Restart Backend Process
-          echo "Restarting Backend Process..."
+          # 2. Update Frontend
+          sudo rm -rf /var/www/uliyar/dist/*
+          sudo mkdir -p /var/www/uliyar/dist
+          sudo cp -r /home/ubuntu/uliyar_deploy_temp/dist/* /var/www/uliyar/dist/
+          
+          # Cleanup
+          sudo rm -rf /home/ubuntu/uliyar_deploy_temp
+
+          # 3. Restart Services
+          echo "Restarting Uliyar Backend..."
           sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
           
-          # --- Frontend Build (React) ---
-          echo "Building Frontend..."
-          cd .. 
-          # We are now in /var/www/uliyar (root) which serves as frontend root
-          sudo npm install
-          
-          # Fix potential memory issues
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          sudo npm run build
-          
-          # --- Finalize ---
-          sudo systemctl reload apache2
-
           echo "Uliyar Deployment Complete!"
