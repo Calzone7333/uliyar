@@ -1,5 +1,6 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Footer = () => {
     return (
@@ -9,8 +10,8 @@ const Footer = () => {
                     {/* Brand Section */}
                     <div>
                         <div className="flex items-center gap-2 mb-6">
-                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center font-bold text-2xl text-white">
-                                U
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                                <img src={logo} alt="Uliyar Logo" className="w-full h-full object-contain" />
                             </div>
                             <span className="text-2xl font-bold tracking-tight">Uliyar</span>
                         </div>
