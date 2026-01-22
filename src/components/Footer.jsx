@@ -10,10 +10,9 @@ const Footer = () => {
                     {/* Brand Section */}
                     <div>
                         <div className="flex items-center gap-2 mb-6">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                            <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
                                 <img src={logo} alt="Uliyar Logo" className="w-full h-full object-contain" />
                             </div>
-                            <span className="text-2xl font-bold tracking-tight">Uliyar</span>
                         </div>
                         <p className="text-slate-400 mb-8 leading-relaxed">
                             Connecting skilled workers with the best opportunities across India.

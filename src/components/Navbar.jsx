@@ -21,10 +21,9 @@ const Navbar = () => {
                 <div className="flex justify-between h-20 items-center">
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-white tracking-tight">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                            <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
                                 <img src={logo} alt="Uliyar Logo" className="w-full h-full object-contain" />
                             </div>
-                            <span>Uliyar</span>
                         </Link>
                     </div>
                     <div className="hidden md:flex items-center space-x-10">
