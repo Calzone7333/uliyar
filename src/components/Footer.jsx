@@ -61,7 +61,7 @@ const Footer = () => {
                         <div className="space-y-4">
                             <div className="flex items-start gap-4 text-slate-400">
                                 <MapPin className="w-5 h-5 shrink-0 mt-1 text-primary" />
-                                <p>32, AJ Block 1st St, Sri Ayyappa Nagar, Chinmaya Nagar Stage II Extension, Kumaran Nagar,<br />Virugambakkam, Chennai, Tamil Nadu 600092</p>
+                                <p>3/32, 1st Main Road, Ayyappa Nagar, Virugambakkam, Chennai-600092</p>
                             </div>
                             <div className="flex items-center gap-4 text-slate-400">
                                 <Phone className="w-5 h-5 shrink-0 text-primary" />
