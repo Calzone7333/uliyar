@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 import logo from '../assets/logo.png';
+import { useUI } from '../context/UIContext';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const { openLogin, openRegister } = useUI();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -94,9 +96,12 @@ const Navbar = () => {
                                 </div>
                             </div>
                         ) : (
-                            <Link to="/login" className="flex items-center gap-2 bg-white text-primary px-5 py-2.5 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm">
+                            <button
+                                onClick={openLogin}
+                                className="flex items-center gap-2 bg-white text-primary px-5 py-2.5 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+                            >
                                 <User size={18} /> Login
-                            </Link>
+                            </button>
                         )}
                     </div>
                     <div className="md:hidden flex items-center">
@@ -143,11 +148,17 @@ const Navbar = () => {
                                 <button onClick={() => { handleLogout(); setIsOpen(false); }} className="text-lg font-medium text-red-300 text-left">Logout</button>
                             </>
                         ) : (
-                            <Link to="/login" className="text-lg font-medium text-primary bg-white p-3 rounded-xl text-center font-bold" onClick={() => setIsOpen(false)}>Login</Link>
+                            <button
+                                onClick={() => { setIsOpen(false); openLogin(); }}
+                                className="text-lg font-medium text-primary bg-white p-3 rounded-xl text-center font-bold"
+                            >
+                                Login
+                            </button>
                         )}
                     </div>
                 </div>
             )}
+
         </nav>
     );
 };

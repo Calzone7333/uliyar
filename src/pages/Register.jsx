@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, User, Briefcase, Building, Loader, Phone } from 'lucide-react';
@@ -39,6 +40,39 @@ const Register = () => {
             }
         } catch (err) {
             setError('Something went wrong. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const { login } = useAuth();
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setIsSubmitting(true);
+        setError('');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: credentialResponse.credential,
+                    role: formData.role
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                login(data.user);
+                if (data.user.role === 'employer') {
+                    navigate('/employer-dashboard');
+                } else {
+                    navigate('/find-jobs');
+                }
+            } else {
+                setError(data.message || 'Google login failed');
+            }
+        } catch (err) {
+            setError('Google login failed. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -165,6 +199,24 @@ const Register = () => {
                         >
                             {isSubmitting ? <Loader className="animate-spin h-5 w-5" /> : "Send OTP"}
                         </button>
+
+                        <div className="relative flex items-center gap-4 py-1">
+                            <div className="flex-grow border-t border-slate-200"></div>
+                            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Or</span>
+                            <div className="flex-grow border-t border-slate-200"></div>
+                        </div>
+
+                        <div className="flex justify-center">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => setError('Google Login Failed')}
+                                useOneTap
+                                theme="outline"
+                                shape="pill"
+                                width="100%"
+                            />
+                        </div>
+
 
                         <div className="text-center pt-2">
                             <p className="text-sm text-slate-500">

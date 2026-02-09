@@ -1,21 +1,24 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
-
-
+const { OAuth2Client } = require('google-auth-library');
+const GOOGLE_CLIENT_ID = "273337002665-v05ss3t2sgah54nk1f3j192rdsokre7f.apps.googleusercontent.com";
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const app = express();
 const PORT = 8082;
-const DB_PATH = path.join(__dirname, 'database.sqlite');
 
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:8082',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:8082',
     'http://192.168.1.2:5173',
     'http://192.168.1.2:5174',
     'http://192.168.1.2:8082',
@@ -32,29 +35,90 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
             callback(null, true);
         } else {
-            console.log("Blocked by CORS:", origin);
-            callback(null, true); // Temporarily allow all for debugging if needed, or stick to false
+            console.log("CORS Blocked for:", origin);
+            callback(null, true);
         }
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json());
 
-// Initialize Database
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        createTables();
-        initializeSettings();
-    }
+app.get('/api/auth/google-client-id', (req, res) => {
+    res.json({ clientId: GOOGLE_CLIENT_ID });
 });
 
-// NODEMAILER SETUP (Replace with your actual Gmail App Password)
+// Database Configuration
+const dbConfig = {
+    host: 'localhost',
+    user: 'root',
+    password: 'root', // Add your password if any
+    database: 'uliyar_db'
+};
+
+// Create connection (outside pool to create DB if not exists)
+const tempConn = mysql.createConnection({
+    host: dbConfig.host,
+    user: dbConfig.user,
+    password: dbConfig.password
+});
+
+tempConn.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`, (err) => {
+    if (err) console.error("Error creating database:", err);
+    else console.log(`Database '${dbConfig.database}' ready.`);
+    tempConn.end();
+});
+
+const pool = mysql.createPool(dbConfig);
+
+// SQLite to MySQL Compatibility Layer
+const db = {
+    run: (sql, params, callback) => {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+        // Replace SQLite specific autoincrement in CREATE TABLE if needed (though we handle it in createTables)
+        pool.query(sql, params, (err, results) => {
+            if (callback) {
+                // In SQLite, 'this' contains lastID. In MySQL results contains insertId.
+                const context = { lastID: results ? results.insertId : null, changes: results ? results.affectedRows : 0 };
+                callback.call(context, err);
+            }
+        });
+    },
+    get: (sql, params, callback) => {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+        pool.query(sql, params, (err, results) => {
+            if (callback) callback(err, results ? results[0] : null);
+        });
+    },
+    all: (sql, params, callback) => {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+        pool.query(sql, params, (err, results) => {
+            if (callback) callback(err, results);
+        });
+    }
+};
+
+console.log('Connected to the MySQL database pool.');
+setTimeout(() => {
+    createTables();
+    initializeSettings();
+}, 1000); // Wait for DB creation check
+
+// NODEMAILER SETUP
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -62,8 +126,6 @@ const transporter = nodemailer.createTransport({
         pass: 'qsdh ojuz kpyz wfyb'
     }
 });
-
-
 
 function runMigrations() {
     const columns = [
@@ -82,30 +144,35 @@ function runMigrations() {
         { table: 'users', col: 'profile_photo_path TEXT' },
         { table: 'jobs', col: 'description TEXT' },
         { table: 'jobs', col: 'skills_required TEXT' },
-        { table: 'jobs', col: 'vacancies INTEGER' },
+        { table: 'jobs', col: 'vacancies INT' },
         { table: 'jobs', col: 'work_mode TEXT' },
         { table: 'jobs', col: 'benefits TEXT' },
         { table: 'jobs', col: 'deadline TEXT' },
         { table: 'jobs', col: 'education_required TEXT' },
         { table: 'jobs', col: 'food_allowance TEXT' },
         { table: 'jobs', col: 'accommodation TEXT' },
-        { table: 'jobs', col: 'companyId INTEGER' },
-        { table: 'jobs', col: 'employerId INTEGER' },
+        { table: 'jobs', col: 'companyId INT' },
+        { table: 'jobs', col: 'employerId INT' },
         { table: 'jobs', col: 'postedAt TEXT' },
         { table: 'jobs', col: 'status TEXT' },
         { table: 'jobs', col: 'category TEXT' },
         { table: 'users', col: 'interested_category TEXT' },
         { table: 'users', col: 'target_roles TEXT' }
     ];
-    columns.forEach(mig => db.run(`ALTER TABLE ${mig.table} ADD COLUMN ${mig.col}`, () => { }));
+    columns.forEach(mig => {
+        // MySQL check if column exists is complex, but we can try IGNORE or just catch error
+        db.run(`ALTER TABLE ${mig.table} ADD COLUMN ${mig.col}`, (err) => {
+            // Silence migration errors if column exists
+        });
+    });
 }
 
 function initializeSettings() {
-    db.run("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)", (err) => {
+    db.run("CREATE TABLE IF NOT EXISTS settings (\`key\` VARCHAR(100) PRIMARY KEY, value TEXT)", (err) => {
         if (!err) {
-            db.get("SELECT value FROM settings WHERE key = 'admin_password'", (err, row) => {
+            db.get("SELECT value FROM settings WHERE \`key\` = 'admin_password'", (err, row) => {
                 if (!row) {
-                    db.run("INSERT INTO settings (key, value) VALUES ('admin_password', 'admin@2025')");
+                    db.run("INSERT INTO settings (\`key\`, value) VALUES ('admin_password', 'admin@2025')");
                 }
             });
         }
@@ -131,79 +198,79 @@ const upload = multer({ storage: storage });
 function createTables() {
     // USERS (Candidates & Recruiters)
     db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL,
-        companyName TEXT,
-        mobile TEXT,
-        email_verified INTEGER DEFAULT 0,
-        otp_verified INTEGER DEFAULT 0,
-        temp_otp TEXT,
-        account_status TEXT DEFAULT 'INACTIVE', -- INACTIVE -> ACTIVE -> BLOCKED
-        profile_status TEXT DEFAULT 'INCOMPLETE',
-        resume_status TEXT DEFAULT 'PENDING', -- PENDING -> APPROVED -> REJECTED
-        company_id INTEGER,
-        dob TEXT,
-        gender TEXT,
-        current_location TEXT,
-        preferred_location TEXT,
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        companyName VARCHAR(255),
+        mobile VARCHAR(20),
+        email_verified INT DEFAULT 0,
+        otp_verified INT DEFAULT 0,
+        temp_otp VARCHAR(10),
+        account_status VARCHAR(20) DEFAULT 'INACTIVE', -- INACTIVE -> ACTIVE -> BLOCKED
+        profile_status VARCHAR(20) DEFAULT 'INCOMPLETE',
+        resume_status VARCHAR(20) DEFAULT 'PENDING', -- PENDING -> APPROVED -> REJECTED
+        company_id INT,
+        dob VARCHAR(50),
+        gender VARCHAR(20),
+        current_location VARCHAR(255),
+        preferred_location VARCHAR(255),
         education TEXT,
         experience TEXT,
         skills TEXT,
-        resume_path TEXT,
+        resume_path VARCHAR(255),
         interested_category TEXT,
         target_roles TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // COMPANIES (Recruiters)
     db.run(`CREATE TABLE IF NOT EXISTS companies (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        recruiterId INTEGER,
-        name TEXT NOT NULL,
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        recruiterId INT,
+        name VARCHAR(255) NOT NULL,
         address TEXT,
-        website TEXT,
-        type TEXT,
-        industry TEXT,
-        size TEXT,
-        location TEXT,
-        logo_path TEXT,
-        doc_path TEXT,
-        status TEXT DEFAULT 'PENDING' -- PENDING -> APPROVED -> REJECTED
+        website VARCHAR(255),
+        type VARCHAR(50),
+        industry VARCHAR(100),
+        size VARCHAR(50),
+        location VARCHAR(255),
+        logo_path VARCHAR(255),
+        doc_path VARCHAR(255),
+        status VARCHAR(20) DEFAULT 'PENDING' -- PENDING -> APPROVED -> REJECTED
     )`);
 
     // JOBS
     db.run(`CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employerId INTEGER,
-        companyId INTEGER,
-        title TEXT NOT NULL,
-        company TEXT NOT NULL,
-        location TEXT NOT NULL,
-        type TEXT NOT NULL,
-        salary TEXT NOT NULL,
-        experience TEXT NOT NULL,
-        tags TEXT NOT NULL,
-        postedAt TEXT DEFAULT CURRENT_TIMESTAMP,
-        status TEXT DEFAULT 'PENDING', -- PENDING -> OPEN -> REJECTED -> CLOSED
-        category TEXT
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        employerId INT,
+        companyId INT,
+        title VARCHAR(255) NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        salary VARCHAR(100) NOT NULL,
+        experience VARCHAR(100) NOT NULL,
+        tags TEXT,
+        postedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(20) DEFAULT 'PENDING', -- PENDING -> OPEN -> REJECTED -> CLOSED
+        category VARCHAR(100)
     )`);
 
     // APPLICATIONS
     db.run(`CREATE TABLE IF NOT EXISTS applications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        jobId INTEGER,
-        jobTitle TEXT,
-        applicantId INTEGER,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        resumePath TEXT NOT NULL,
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        jobId INT,
+        jobTitle VARCHAR(255),
+        applicantId INT,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        resumePath VARCHAR(255) NOT NULL,
         profileData TEXT,
-        status TEXT DEFAULT 'Applied',
-        appliedAt TEXT DEFAULT CURRENT_TIMESTAMP
+        status VARCHAR(20) DEFAULT 'Applied',
+        appliedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 }
 
@@ -525,6 +592,46 @@ app.post('/api/auth/login', (req, res) => {
         } else { res.status(401).json({ success: false, message: "Invalid" }); }
     });
 });
+
+app.post('/api/auth/google-login', async (req, res) => {
+    const { token, role } = req.body;
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+
+        db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            if (row) {
+                if (row.account_status !== 'ACTIVE') {
+                    db.run("UPDATE users SET account_status = 'ACTIVE' WHERE id = ?", [row.id]);
+                    row.account_status = 'ACTIVE';
+                }
+                res.json({ success: true, user: row });
+            } else {
+                const randomPassword = Math.random().toString(36).slice(-10);
+                const userRole = role || 'employee';
+
+                const sql = `INSERT INTO users (name, email, password, role, account_status, profile_photo_path) VALUES (?, ?, ?, ?, 'ACTIVE', ?)`;
+                db.run(sql, [name, email, randomPassword, userRole, picture], function (err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    const userId = this.lastID;
+                    db.get("SELECT * FROM users WHERE id = ?", [userId], (err, newUser) => {
+                        res.json({ success: true, user: newUser });
+                    });
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Google verify error", error);
+        res.status(400).json({ success: false, message: "Invalid Google token" });
+    }
+});
+
 app.get('/api/user/:id', (req, res) => {
     const { id } = req.params;
     db.get("SELECT * FROM users WHERE id = ?", [id], (err, row) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Search, MapPin, Briefcase, ChevronDown, Filter, PlusCircle } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 import JobCard from '../components/JobCard';
 import { API_BASE_URL } from '../config';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
@@ -10,6 +10,8 @@ const FindJobs = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [location, setLocation] = useState("");
+    const { openLogin } = useUI();
+    const [openDropdown, setOpenDropdown] = useState(null); // 'category' or 'subcategory'
 
     // Category States
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -31,6 +33,16 @@ const FindJobs = () => {
             setSelectedSubCategory("All Sub-categories");
         }
     }, [selectedCategory]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.dropdown-container')) {
+                setOpenDropdown(null);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => fetchJobs(), 500);
@@ -131,43 +143,75 @@ const FindJobs = () => {
                             </div>
 
                             {/* Field 3: Category (2 cols) */}
-                            <div className="md:col-span-2 relative group">
+                            <div className="md:col-span-2 relative group dropdown-container">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">Category</label>
-                                <div className="relative flex items-center bg-slate-800/50 rounded-xl px-4 py-3 border border-transparent group-focus-within:border-primary hover:bg-slate-800 transition-all">
-                                    <Briefcase className="text-primary w-4 h-4 mr-3 shrink-0" />
-                                    <select
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                        className="appearance-none bg-transparent w-full text-white focus:outline-none font-bold text-base h-6 pr-6 cursor-pointer truncate"
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            setOpenDropdown(openDropdown === 'category' ? null : 'category');
+                                        }}
+                                        className="relative flex items-center w-full bg-white rounded-xl px-4 py-3 border border-gray-200 hover:border-blue-200 transition-all text-left shadow-sm active:scale-[0.98]"
                                     >
-                                        {mainCategories.map(cat => (
-                                            <option key={cat} value={cat} className="bg-slate-900 text-white py-2 font-medium truncate">{cat}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 text-primary pointer-events-none w-4 h-4" />
+                                        <span className={`font-semibold text-sm truncate pr-6 ${selectedCategory !== 'All Categories' ? 'text-blue-600' : 'text-slate-600'}`}>
+                                            {selectedCategory}
+                                        </span>
+                                        <ChevronDown className={`absolute right-3 text-slate-400 transition-transform duration-300 ${openDropdown === 'category' ? 'rotate-180' : ''}`} size={16} />
+                                    </button>
+
+                                    {openDropdown === 'category' && (
+                                        <div className="absolute top-full left-0 min-w-[300px] mt-1.5 bg-white border border-gray-100 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] z-[100] max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200 py-1">
+                                            {mainCategories.map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => {
+                                                        setSelectedCategory(cat);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className={`w-full text-left px-5 py-3.5 text-[14px] font-semibold transition-all hover:bg-slate-50 ${selectedCategory === cat ? 'bg-blue-50 text-blue-600' : 'text-slate-600'}`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Field 4: Sub-Category (2 cols) */}
-                            <div className="md:col-span-2 relative group">
+                            <div className="md:col-span-2 relative group dropdown-container">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">Sub Category</label>
-                                <div className={`relative flex items-center bg-slate-800/50 rounded-xl px-4 py-3 border border-transparent ${selectedCategory === "All Categories" ? 'opacity-50 cursor-not-allowed' : 'group-focus-within:border-primary hover:bg-slate-800'} transition-all`}>
-                                    <Filter className="text-primary w-4 h-4 mr-3 shrink-0" />
-                                    <select
-                                        value={selectedSubCategory}
-                                        onChange={(e) => setSelectedSubCategory(e.target.value)}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            if (selectedCategory !== "All Categories") {
+                                                setOpenDropdown(openDropdown === 'subcategory' ? null : 'subcategory');
+                                            }
+                                        }}
                                         disabled={selectedCategory === "All Categories"}
-                                        className="appearance-none bg-transparent w-full text-white focus:outline-none font-bold text-base h-6 pr-6 cursor-pointer disabled:cursor-not-allowed truncate"
+                                        className={`relative flex items-center w-full bg-white rounded-xl px-4 py-3 border border-gray-200 transition-all text-left shadow-sm ${selectedCategory === "All Categories" ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-200 active:scale-[0.98]'}`}
                                     >
-                                        {subCategories.length > 0 ? (
-                                            subCategories.map(sub => (
-                                                <option key={sub} value={sub} className="bg-slate-900 text-white py-2 font-medium truncate">{sub}</option>
-                                            ))
-                                        ) : (
-                                            <option className="bg-slate-900 text-slate-500">Select Category First</option>
-                                        )}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 text-primary pointer-events-none w-4 h-4" />
+                                        <span className={`font-semibold text-sm truncate pr-6 ${selectedSubCategory !== 'All Sub-categories' ? 'text-blue-600' : 'text-slate-600'}`}>
+                                            {selectedCategory === "All Categories" ? 'Select Category first' : selectedSubCategory}
+                                        </span>
+                                        <ChevronDown className={`absolute right-3 text-slate-400 transition-transform duration-200 ${openDropdown === 'subcategory' ? 'rotate-180' : ''}`} size={16} />
+                                    </button>
+
+                                    {openDropdown === 'subcategory' && subCategories.length > 0 && (
+                                        <div className="absolute top-full left-0 min-w-[300px] mt-1.5 bg-white border border-gray-100 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] z-[100] max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200 py-1">
+                                            {subCategories.map(sub => (
+                                                <button
+                                                    key={sub}
+                                                    onClick={() => {
+                                                        setSelectedSubCategory(sub);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className={`w-full text-left px-5 py-3.5 text-[14px] font-semibold transition-all hover:bg-slate-50 ${selectedSubCategory === sub ? 'bg-blue-50 text-blue-600' : 'text-slate-600'}`}
+                                                >
+                                                    {sub}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -184,14 +228,14 @@ const FindJobs = () => {
 
                             {/* Field 6: Post Job Button (2 cols) */}
                             <div className="md:col-span-2">
-                                <Link
-                                    to="/login"
+                                <button
+                                    onClick={openLogin}
                                     className="w-full bg-white hover:bg-teal-50 text-slate-900 font-bold h-[58px] rounded-xl transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-lg flex items-center justify-center border border-gray-200 group"
                                     title="Post a Job"
                                 >
                                     <PlusCircle size={20} className="text-primary mr-2 group-hover:scale-110 transition-transform" />
                                     <span className="text-sm lg:text-base">Post Job</span>
-                                </Link>
+                                </button>
                             </div>
 
                         </div>

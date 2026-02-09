@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Loader, CheckCircle, XCircle, Building, Users, Briefcase, FileText, UserCheck, ShieldAlert } from 'lucide-react';
+import { Loader, CheckCircle, XCircle, Building, Users, Briefcase, FileText, UserCheck, ShieldAlert, PlusCircle, MapPin, DollarSign, AlignLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import { JOB_CATEGORIES } from '../constants/jobCategories';
 
 const AdminDashboard = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,9 +12,23 @@ const AdminDashboard = () => {
     const [pendingResumes, setPendingResumes] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [allCompanies, setAllCompanies] = useState([]);
-    const [activeTab, setActiveTab] = useState('resumes'); // resumes, companies, jobs, users_list, companies_list
+    const [activeTab, setActiveTab] = useState('resumes'); // resumes, companies, jobs, users_list, companies_list, post_job
     const [viewCompany, setViewCompany] = useState(null);
     const [viewCandidate, setViewCandidate] = useState(null);
+
+    // Job Post State
+    const [jobData, setJobData] = useState({
+        title: '',
+        companyName: '',
+        category: '',
+        subCategory: '',
+        location: '',
+        salary: '',
+        description: '',
+        requirements: '',
+        jobType: 'Full Time'
+    });
+    const [isPosting, setIsPosting] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -89,6 +104,45 @@ const AdminDashboard = () => {
         } catch (error) { alert("Failed"); }
     };
 
+    const handleJobPost = async (e) => {
+        e.preventDefault();
+        if (!jobData.category || !jobData.subCategory) {
+            alert("Please select Category and Sub-category");
+            return;
+        }
+        setIsPosting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/post-job`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jobData),
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert("Job Posted Successfully!");
+                setJobData({
+                    title: '',
+                    companyName: '',
+                    category: '',
+                    subCategory: '',
+                    location: '',
+                    salary: '',
+                    description: '',
+                    requirements: '',
+                    jobType: 'Full Time'
+                });
+                setActiveTab('jobs');
+                fetchAllPending();
+            } else {
+                alert(data.message || "Failed to post job");
+            }
+        } catch (error) {
+            alert("Error posting job");
+        } finally {
+            setIsPosting(false);
+        }
+    };
+
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#ebf2f7]">
@@ -152,6 +206,12 @@ const AdminDashboard = () => {
                         >
                             <Briefcase size={18} /> New Jobs
                             {pendingJobs.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-auto">{pendingJobs.length}</span>}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('post_job')}
+                            className={`w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${activeTab === 'post_job' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-white/50'}`}
+                        >
+                            <PlusCircle size={18} /> Post Direct Job
                         </button>
 
                         <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-6 mb-2 px-4">Database Management</div>
@@ -440,6 +500,144 @@ const AdminDashboard = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'post_job' && (
+                            <div className="max-w-3xl">
+                                <h2 className="text-2xl font-bold text-[#031d31] mb-6">Create New Job Post</h2>
+                                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                                    <form onSubmit={handleJobPost} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Title</label>
+                                                <div className="relative">
+                                                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. Senior Accountant"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition-all"
+                                                        value={jobData.title}
+                                                        onChange={(e) => setJobData({ ...jobData, title: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Company Name</label>
+                                                <div className="relative">
+                                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. Uliyar Services"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition-all"
+                                                        value={jobData.companyName}
+                                                        onChange={(e) => setJobData({ ...jobData, companyName: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Main Category</label>
+                                                <select
+                                                    required
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none bg-white transition-all appearance-none cursor-pointer"
+                                                    value={jobData.category}
+                                                    onChange={(e) => setJobData({ ...jobData, category: e.target.value, subCategory: '' })}
+                                                >
+                                                    <option value="">Select Category</option>
+                                                    {Object.keys(JOB_CATEGORIES).map(cat => (
+                                                        <option key={cat} value={cat}>{cat}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Sub Category</label>
+                                                <select
+                                                    required
+                                                    disabled={!jobData.category}
+                                                    className={`w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none bg-white transition-all appearance-none cursor-pointer ${!jobData.category && 'opacity-50'}`}
+                                                    value={jobData.subCategory}
+                                                    onChange={(e) => setJobData({ ...jobData, subCategory: e.target.value })}
+                                                >
+                                                    <option value="">Select Sub-category</option>
+                                                    {jobData.category && JOB_CATEGORIES[jobData.category].map(sub => (
+                                                        <option key={sub} value={sub}>{sub}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Location</label>
+                                                <div className="relative">
+                                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="City, Area"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition-all"
+                                                        value={jobData.location}
+                                                        onChange={(e) => setJobData({ ...jobData, location: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Salary Range</label>
+                                                <div className="relative">
+                                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. ₹15,000 - ₹25,000"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition-all"
+                                                        value={jobData.salary}
+                                                        onChange={(e) => setJobData({ ...jobData, salary: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-1">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Type</label>
+                                                <select
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none bg-white transition-all appearance-none cursor-pointer"
+                                                    value={jobData.jobType}
+                                                    onChange={(e) => setJobData({ ...jobData, jobType: e.target.value })}
+                                                >
+                                                    <option value="Full Time">Full Time</option>
+                                                    <option value="Part Time">Part Time</option>
+                                                    <option value="Contract">Contract</option>
+                                                    <option value="Freelance">Freelance</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Description</label>
+                                                <div className="relative">
+                                                    <AlignLeft className="absolute left-3 top-4 text-gray-300" size={18} />
+                                                    <textarea
+                                                        required
+                                                        rows="4"
+                                                        placeholder="Briefly describe the role and responsibilities..."
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition-all"
+                                                        value={jobData.description}
+                                                        onChange={(e) => setJobData({ ...jobData, description: e.target.value })}
+                                                    ></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={isPosting}
+                                            className="w-full bg-[#031d31] text-white py-4 rounded-2xl font-bold hover:bg-blue-900 transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                                        >
+                                            {isPosting ? <Loader className="animate-spin" size={20} /> : <><PlusCircle size={20} /> Publish Job Now</>}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         )}

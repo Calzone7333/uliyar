@@ -3,10 +3,12 @@ import { MapPin, Clock, DollarSign, ArrowRight, Building2 } from 'lucide-react';
 import ApplyJobModal from './ApplyJobModal';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUI } from '../context/UIContext';
 
 const JobCard = ({ job }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { user } = useAuth();
+    const { openLogin } = useUI();
     const navigate = useNavigate();
 
     // Dynamic styles for labels based on job category/type logic
@@ -22,8 +24,7 @@ const JobCard = ({ job }) => {
 
     const handleApplyClick = () => {
         if (!user) {
-            // Strictly redirect to login page if no user
-            navigate('/login');
+            openLogin();
             return;
         }
         if (user.role === 'employer') {

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import { useUI } from '../context/UIContext';
 
 const Hero = () => {
     // Base sets of images
@@ -25,6 +25,8 @@ const Hero = () => {
     const col1 = [...set1, ...set1, ...set1]; // Tripled for safety on large screens
     const col2 = [...set2, ...set2, ...set2];
     const col3 = [...set3, ...set3, ...set3];
+
+    const { openLogin, openRegister } = useUI();
 
     return (
         <div className="bg-secondary text-slate-900 overflow-hidden relative pt-4 pb-20 lg:pb-32">
@@ -54,8 +56,18 @@ const Hero = () => {
                         </p>
                     </div>
                     <div className="mt-10 flex flex-wrap gap-4">
-                        <Link to="/login" className="px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-500/20">Join as Worker</Link>
-                        <Link to="/login" className="px-8 py-4 bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-xl font-bold text-lg transition-all shadow-sm">Post a Job</Link>
+                        <button
+                            onClick={openRegister}
+                            className="px-8 py-4 bg-primary hover:bg-teal-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-500/20"
+                        >
+                            Join as Worker
+                        </button>
+                        <button
+                            onClick={openLogin}
+                            className="px-8 py-4 bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-xl font-bold text-lg transition-all shadow-sm"
+                        >
+                            Post a Job
+                        </button>
                     </div>
                 </div>
 
