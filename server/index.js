@@ -56,8 +56,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'root',
-    password: 'root', // Add your password if any
+    user: 'kanakkaalar_user',
+    password: 'SecurePass2025!', // Add your password if any
     database: 'uliyar_db'
 };
 
