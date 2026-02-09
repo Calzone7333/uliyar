@@ -109,6 +109,10 @@ const db = {
         pool.query(sql, params, (err, results) => {
             if (callback) callback(err, results);
         });
+    },
+    serialize: (fn) => {
+        // MySQL pool handles concurrency, so we can just execute the function
+        if (fn) fn();
     }
 };
 
