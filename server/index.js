@@ -73,7 +73,7 @@ const dbConfig = {
 // Database Initialization
 const pool = mysql.createPool(dbConfig);
 
-// SQLite to MySQL Compatibility Layer for old logic
+// SQLite to MySQL Compatibility Layer
 const db = {
     run: (sql, params, callback) => {
         if (typeof params === 'function') {
@@ -113,39 +113,18 @@ const initializeDB = async () => {
     try {
         console.log('🔄 Checking database connection...');
 
-        // Try to create the database if permissions allow
-        const tempConn = mysql.createConnection({
-            host: dbConfig.host,
-            user: dbConfig.user,
-            password: dbConfig.password
-        });
-
-        tempConn.connect((err) => {
-            if (err) {
-                console.warn('⚠️ Could not connect to root MySQL to verify DB. Skipping DB creation check.');
-                return;
-            }
-            tempConn.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`, (dbErr) => {
-                if (dbErr) console.warn('⚠️ DB creation check failed (insufficient permissions).');
-                else console.log(`✅ Database '${dbConfig.database}' is ready.`);
-                tempConn.end();
-            });
-        });
-
-        // Test the pool connection
+        // Use the pool instead of a new connection for simplicity
         const [rows] = await pool.promise().query('SELECT 1');
         console.log('✅ Connected to MySQL database pool.');
 
-        // Run Table Creation & Migrations
         createTables();
         initializeSettings();
     } catch (error) {
         console.error('❌ Database connection failed:', error.message);
-        console.log('ℹ️ Server will keep running, but API calls will fail until DB is fixed.');
+        console.log('ℹ️ Server will continue to try connecting...');
     }
 };
 
-// Start DB check
 initializeDB();
 
 // NODEMAILER SETUP
