@@ -63,36 +63,25 @@ app.get('/api/auth/google-client-id', (req, res) => {
 const dbConfig = {
     host: 'localhost',
     user: 'Hado',
-    password: 'Hadoglobal@123', // Add your password if any
-    database: 'uliyar_db'
+    password: 'Hadoglobal@123',
+    database: 'uliyar_db',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 };
 
-// Create connection (outside pool to create DB if not exists)
-const tempConn = mysql.createConnection({
-    host: dbConfig.host,
-    user: dbConfig.user,
-    password: dbConfig.password
-});
-
-tempConn.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`, (err) => {
-    if (err) console.error("Error creating database:", err);
-    else console.log(`Database '${dbConfig.database}' ready.`);
-    tempConn.end();
-});
-
+// Database Initialization
 const pool = mysql.createPool(dbConfig);
 
-// SQLite to MySQL Compatibility Layer
+// SQLite to MySQL Compatibility Layer for old logic
 const db = {
     run: (sql, params, callback) => {
         if (typeof params === 'function') {
             callback = params;
             params = [];
         }
-        // Replace SQLite specific autoincrement in CREATE TABLE if needed (though we handle it in createTables)
         pool.query(sql, params, (err, results) => {
             if (callback) {
-                // In SQLite, 'this' contains lastID. In MySQL results contains insertId.
                 const context = { lastID: results ? results.insertId : null, changes: results ? results.affectedRows : 0 };
                 callback.call(context, err);
             }
@@ -116,17 +105,48 @@ const db = {
             if (callback) callback(err, results);
         });
     },
-    serialize: (fn) => {
-        // MySQL pool handles concurrency, so we can just execute the function
-        if (fn) fn();
+    serialize: (fn) => { if (fn) fn(); }
+};
+
+// Verification and Startup Logic
+const initializeDB = async () => {
+    try {
+        console.log('🔄 Checking database connection...');
+
+        // Try to create the database if permissions allow
+        const tempConn = mysql.createConnection({
+            host: dbConfig.host,
+            user: dbConfig.user,
+            password: dbConfig.password
+        });
+
+        tempConn.connect((err) => {
+            if (err) {
+                console.warn('⚠️ Could not connect to root MySQL to verify DB. Skipping DB creation check.');
+                return;
+            }
+            tempConn.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`, (dbErr) => {
+                if (dbErr) console.warn('⚠️ DB creation check failed (insufficient permissions).');
+                else console.log(`✅ Database '${dbConfig.database}' is ready.`);
+                tempConn.end();
+            });
+        });
+
+        // Test the pool connection
+        const [rows] = await pool.promise().query('SELECT 1');
+        console.log('✅ Connected to MySQL database pool.');
+
+        // Run Table Creation & Migrations
+        createTables();
+        initializeSettings();
+    } catch (error) {
+        console.error('❌ Database connection failed:', error.message);
+        console.log('ℹ️ Server will keep running, but API calls will fail until DB is fixed.');
     }
 };
 
-console.log('Connected to the MySQL database pool.');
-setTimeout(() => {
-    createTables();
-    initializeSettings();
-}, 1000); // Wait for DB creation check
+// Start DB check
+initializeDB();
 
 // NODEMAILER SETUP
 const transporter = nodemailer.createTransport({
