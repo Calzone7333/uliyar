@@ -1,33 +1,26 @@
-name: Deploy Uliyar (Frontend + Backend)
+name: Deploy Uliyar (Backend + Frontend)
 
 on:
   push:
     branches:
-      - main
+      - main  # deploy only when pushing to main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
       ############################
-      # 1️⃣ Setup Node.js
+      # 2️⃣ Setup Node.js
       ############################
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
-
-      ############################
-      # 2️⃣ Build Frontend (React)
-      ############################
-      - name: Build Frontend
-        run: |
-          npm install
-          npm run build
 
       ############################
       # 3️⃣ Setup SSH for Deployment
@@ -38,55 +31,55 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       ############################
-      # 4️⃣ Deploy Backend files (server/)
+      # 4️⃣ Build Frontend (React)
+      ############################
+      - name: Build Frontend
+        run: |
+          npm install
+          npm run build
+
+      ############################
+      # 5️⃣ Deploy Backend files (server/)
       ############################
       - name: Deploy Backend
         run: |
-          # Create directory if it doesn't exist
-          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "mkdir -p /home/prakash/apps/uliyar/server"
-          
           # Sync server folder (excluding node_modules)
           rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           server/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 
       ############################
-      # 5️⃣ Deploy Frontend (dist folder)
+      # 6️⃣ Deploy Frontend (dist folder)
       ############################
       - name: Deploy Frontend
         run: |
-          # Create temporary temp folder for sync
-          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "mkdir -p /home/prakash/apps/uliyar/frontend"
-          
           rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           dist/ \
-          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
 
       ############################
-      # 6️⃣ Final Server Deployment
+      # 7️⃣ Copy Frontend to Apache Dir (Matched with Kanakkaalar Style)
       ############################
-      - name: Server Setup & Restart
+      - name: Copy Frontend
+        run: |
+          # We assume prakash has permission to write to /var/www/uliyar
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/"
+
+      ############################
+      # 8️⃣ Restart Backend Application
+      ############################
+      - name: Restart Backend
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            set -e
+            # Stop existing backend if running (Kanakkaalar style)
+            pkill -f 'node index.js' || true
             
-            # --- 1. DEPLOY FRONTEND (/var/www/uliyar) ---
-            # Clean old files using sudo (allowed via NOPASSWD)
-            sudo rm -rf /var/www/uliyar/*
-            sudo mkdir -p /var/www/uliyar
-            
-            # Copy new build files from apps folder to web directory
-            sudo cp -r /home/prakash/apps/uliyar/frontend/* /var/www/uliyar/
-            
-            # --- 2. SETUP BACKEND ---
+            # Navigate to server directory and install production deps
             cd /home/prakash/apps/uliyar/server
             npm install --production
-            
-            # --- 3. RESTART BACKEND (Using Port 8082) ---
-            sudo fuser -k 8082/tcp || true
+
+            # Start new backend in background
             nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
-            # --- 4. REFRESH WEB SERVER ---
-            sudo systemctl reload apache2
-            echo "Deployment complete!"
+            echo "Deployment Complete!"
           EOF
