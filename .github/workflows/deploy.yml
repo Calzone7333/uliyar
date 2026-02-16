@@ -1,79 +1,91 @@
-name: Deploy Uliyar to EC2
+name: Deploy Uliyar (Frontend + Backend)
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Setup Node 20
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
+      ############################
+      # 1️⃣ Setup Node.js
+      ############################
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-    - name: Build Backend & Frontend
-      run: |
-        # Build Backend (Install deps)
-        cd server
-        npm install
-        cd ..
-        
-        # Build Frontend
-        npm install
-        npm run build
+      ############################
+      # 2️⃣ Build Frontend (React)
+      ############################
+      - name: Build Frontend
+        run: |
+          npm install
+          npm run build
 
-    - name: Prepare Server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: mkdir -p /home/ubuntu/uliyar_deploy_temp && chmod 777 /home/ubuntu/uliyar_deploy_temp
+      ############################
+      # 3️⃣ Setup SSH for Deployment
+      ############################
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Upload Artifacts
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        source: "server/,dist/"
-        target: "/home/ubuntu/uliyar_deploy_temp"
-        timeout: 300s
-
-    - name: Deploy & Restart Background Services
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        timeout: 120s
-        script: |
-          set -e
-          echo "Deploying..."
+      ############################
+      # 4️⃣ Deploy Backend files (server/)
+      ############################
+      - name: Deploy Backend
+        run: |
+          # Create directory if it doesn't exist
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "mkdir -p /home/prakash/apps/uliyar/server"
           
-          # Backend
-          sudo cp -r /home/ubuntu/uliyar_deploy_temp/server/* /var/www/uliyar/server/
-          cd /var/www/uliyar/server
-          sudo npm install --production
-          
-          # Frontend
-          sudo rm -rf /var/www/uliyar/dist/*
-          sudo mkdir -p /var/www/uliyar/dist
-          sudo cp -r /home/ubuntu/uliyar_deploy_temp/dist/* /var/www/uliyar/dist/
-          
-          rm -rf /home/ubuntu/uliyar_deploy_temp
+          # Sync server folder (excluding node_modules)
+          rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          server/ \
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 
-          # Restart Backend
-          echo "Restarting Backend..."
-          sudo pm2 restart uliyar-backend || sudo pm2 start index.js --name uliyar-backend -- port 8082
-          sudo pm2 save
+      ############################
+      # 5️⃣ Deploy Frontend (dist folder)
+      ############################
+      - name: Deploy Frontend
+        run: |
+          # Create temporary temp folder for sync
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "mkdir -p /home/prakash/apps/uliyar/frontend"
           
-          sudo systemctl reload apache2
-          echo "Done!"
+          rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          dist/ \
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/
+
+      ############################
+      # 6️⃣ Final Server Deployment
+      ############################
+      - name: Server Setup & Restart
+        run: |
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
+            set -e
+            
+            # --- FRONTEND DEPLOY ---
+            # Copy to Apache web directory
+            sudo mkdir -p /var/www/uliyar
+            sudo cp -r /home/prakash/apps/uliyar/frontend/* /var/www/uliyar/
+            
+            # --- BACKEND SETUP ---
+            cd /home/prakash/apps/uliyar/server
+            npm install --production
+            
+            # --- RESTART WITHOUT PM2 ---
+            # Stop existing backend if running on port 8082
+            sudo fuser -k 8082/tcp || true
+            
+            # Start new backend in background
+            nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
+            
+            # Restart Apache to ensure proxy rules are working
+            sudo systemctl reload apache2
+          EOF

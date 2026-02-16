@@ -25,11 +25,17 @@ const allowedOrigins = [
     'http://115.97.59.230:5173',
     'http://115.97.59.230:5174',
     'http://115.97.59.230:8082',
+    'http://hado.co.in',
+    'https://hado.co.in',
+    'http://www.hado.co.in',
+    'https://www.hado.co.in',
     'http://uliyar.com',
+    'https://uliyar.com',
     'http://uliyar.com:5173',
     'http://uliyar.com:5174',
     'http://uliyar.com:8082',
     'http://www.uliyar.com',
+    'https://www.uliyar.com',
     'http://www.uliyar.com:8082'
 ];
 
@@ -56,8 +62,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'kanakkaalar_user',
-    password: 'SecurePass2025!', // Add your password if any
+    user: 'Hado',
+    password: 'Hadoglobal@123', // Add your password if any
     database: 'uliyar_db'
 };
 
