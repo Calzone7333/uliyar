@@ -62,7 +62,7 @@ jobs:
           dist/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/
 
-      ############################
+            ############################
       # 6️⃣ Final Server Deployment (Matched with Kanakkaalar)
       ############################
       - name: Server Setup & Restart
@@ -71,22 +71,22 @@ jobs:
             set -e
             
             # --- 1. DEPLOY FRONTEND (/var/www/uliyar) ---
-            # Clean old files first to ensure fresh deploy
-            sudo rm -rf /var/www/uliyar/*
-            sudo mkdir -p /var/www/uliyar
-            
-            # Copy new build files from apps folder to web directory
-            sudo cp -r /home/prakash/apps/uliyar/frontend/* /var/www/uliyar/
+            # No sudo needed for files anymore because you are the OWNER
+            rm -rf /var/www/uliyar/*
+            mkdir -p /var/www/uliyar
+            cp -r /home/prakash/apps/uliyar/frontend/* /var/www/uliyar/
             
             # --- 2. SETUP BACKEND ---
             cd /home/prakash/apps/uliyar/server
             npm install --production
             
             # --- 3. RESTART BACKEND (Using Port 8082) ---
+            # Still need sudo for fuser, but we allowed it in NOPASSWD script
             sudo fuser -k 8082/tcp || true
             nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
             # --- 4. REFRESH WEB SERVER ---
+            # Still need sudo for systemctl, but we allowed it in NOPASSWD script
             sudo systemctl reload apache2
-            echo "Kanakkaalar style deployment complete for Uliyar!"
+            echo "Deployment complete!"
           EOF
