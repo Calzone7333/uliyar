@@ -63,29 +63,30 @@ jobs:
           prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/
 
       ############################
-      # 6️⃣ Final Server Deployment
+      # 6️⃣ Final Server Deployment (Matched with Kanakkaalar)
       ############################
       - name: Server Setup & Restart
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
             set -e
             
-            # --- FRONTEND DEPLOY ---
-            # Copy to Apache web directory
+            # --- 1. DEPLOY FRONTEND (/var/www/uliyar) ---
+            # Clean old files first to ensure fresh deploy
+            sudo rm -rf /var/www/uliyar/*
             sudo mkdir -p /var/www/uliyar
+            
+            # Copy new build files from apps folder to web directory
             sudo cp -r /home/prakash/apps/uliyar/frontend/* /var/www/uliyar/
             
-            # --- BACKEND SETUP ---
+            # --- 2. SETUP BACKEND ---
             cd /home/prakash/apps/uliyar/server
             npm install --production
             
-            # --- RESTART WITHOUT PM2 ---
-            # Stop existing backend if running on port 8082
+            # --- 3. RESTART BACKEND (Using Port 8082) ---
             sudo fuser -k 8082/tcp || true
-            
-            # Start new backend in background
             nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
-            # Restart Apache to ensure proxy rules are working
+            # --- 4. REFRESH WEB SERVER ---
             sudo systemctl reload apache2
+            echo "Kanakkaalar style deployment complete for Uliyar!"
           EOF
