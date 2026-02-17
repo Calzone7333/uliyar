@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
 const GOOGLE_CLIENT_ID = "273337002665-v05ss3t2sgah54nk1f3j192rdsokre7f.apps.googleusercontent.com";
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -127,12 +128,17 @@ const initializeDB = async () => {
 
 initializeDB();
 
-// NODEMAILER SETUP
+// NODEMAILER SETUP (Gmail Apps Password)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
     auth: {
         user: 'wcvfw2019@gmail.com',
         pass: 'qsdh ojuz kpyz wfyb'
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -617,7 +623,9 @@ app.get('/api/jobs', (req, res) => {
     });
 });
 
-const bcrypt = require('bcryptjs');
+// ----------------------------------------------------
+// 🔐 AUTHENTICATION
+// ----------------------------------------------------
 
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
@@ -741,10 +749,10 @@ app.post('/api/admin/post-job', (req, res) => {
     const { title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate } = req.body;
 
     // Admin jobs are employerId = 0 and status = 'OPEN'
-    const sql = `INSERT INTO jobs (title, company, category, location, salary, description, type, status, employerId, postedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?)`;
+    const sql = `INSERT INTO jobs (title, company, category, subCategory, location, salary, description, type, status, employerId, postedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?)`;
     const postedAt = new Date().toLocaleDateString();
 
-    db.run(sql, [title, companyName, category, location, salary, description, jobType, postedAt], function (err) {
+    db.run(sql, [title, companyName, category, subCategory, location, salary, description, jobType, postedAt], function (err) {
         if (err) return res.status(500).json({ success: false, message: err.message });
         res.json({ success: true, jobId: this.lastID });
     });

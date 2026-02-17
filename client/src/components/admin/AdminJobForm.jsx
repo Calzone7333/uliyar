@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Building2, MapPin, IndianRupee, AlignLeft, Layers, Loader, PlusCircle, FileText, Phone, Mail, Calendar, Image } from 'lucide-react';
+import { Briefcase, Building2, MapPin, IndianRupee, AlignLeft, Layers, Loader, PlusCircle, FileText, Phone, Mail, Calendar, Image, Edit3 } from 'lucide-react';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 
 const AdminJobForm = ({ onPost, isPosting }) => {
@@ -8,33 +8,66 @@ const AdminJobForm = ({ onPost, isPosting }) => {
         companyName: '',
         category: '',
         subCategory: '',
+        customCategory: '',
+        customSubCategory: '',
         location: '',
         salary: '',
         description: '',
         requirements: '',
-        jobType: 'Full Time'
+        jobType: 'Full Time',
+        contactPhone: '',
+        contactEmail: '',
+        socialMediaDate: '',
+        jobAnnouncedDate: '',
+        socialMediaImage: null,
+        newspaperImage: null
     });
+
+    const [isOtherCategory, setIsOtherCategory] = useState(false);
+    const [isOtherSubCategory, setIsOtherSubCategory] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onPost(jobData, () => {
+
+        // Prepare final dataz
+        const finalData = { ...jobData };
+        if (isOtherCategory) {
+            finalData.category = jobData.customCategory;
+        }
+        if (isOtherSubCategory) {
+            finalData.subCategory = jobData.customSubCategory;
+        }
+
+        onPost(finalData, () => {
             setJobData({
                 title: '',
                 companyName: '',
                 category: '',
                 subCategory: '',
+                customCategory: '',
+                customSubCategory: '',
                 location: '',
                 salary: '',
                 description: '',
                 requirements: '',
-                jobType: 'Full Time'
+                jobType: 'Full Time',
+                contactPhone: '',
+                contactEmail: '',
+                socialMediaDate: '',
+                jobAnnouncedDate: '',
+                socialMediaImage: null,
+                newspaperImage: null
             });
+            setIsOtherCategory(false);
+            setIsOtherSubCategory(false);
         });
     };
 
+    const categories = Object.keys(JOB_CATEGORIES);
+    const subCategories = jobData.category ? (JOB_CATEGORIES[jobData.category] || []) : [];
+
     return (
         <div className="max-w-3xl mx-auto">
-            {/* Header Section */}
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
@@ -50,9 +83,7 @@ const AdminJobForm = ({ onPost, isPosting }) => {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Left Column - Main Info */}
                         <div className="md:col-span-2 space-y-6">
-                            {/* Section 1: Core Details */}
                             <section>
                                 <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
                                     <Briefcase size={12} /> Job Information
@@ -86,26 +117,22 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                                 </div>
                             </section>
 
-                            {/* Section 2: Description */}
                             <section>
                                 <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
                                     <AlignLeft size={12} /> Description
                                 </h3>
                                 <div>
-                                    <div className="relative">
-                                        <textarea
-                                            required
-                                            rows="5"
-                                            placeholder="Role responsibilities & requirements..."
-                                            className="w-full p-4 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none text-sm text-slate-700 bg-slate-50 focus:bg-white leading-relaxed"
-                                            value={jobData.description}
-                                            onChange={(e) => setJobData({ ...jobData, description: e.target.value })}
-                                        ></textarea>
-                                    </div>
+                                    <textarea
+                                        required
+                                        rows="5"
+                                        placeholder="Role responsibilities & requirements..."
+                                        className="w-full p-4 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none text-sm text-slate-700 bg-slate-50 focus:bg-white leading-relaxed"
+                                        value={jobData.description}
+                                        onChange={(e) => setJobData({ ...jobData, description: e.target.value })}
+                                    ></textarea>
                                 </div>
                             </section>
 
-                            {/* Section 3: Admin Details (New) */}
                             <section>
                                 <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
                                     <FileText size={12} /> Admin & Internal Details
@@ -135,7 +162,6 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                                             type="date"
                                             value={jobData.socialMediaDate || ''}
                                             onChange={v => setJobData({ ...jobData, socialMediaDate: v })}
-                                            placeholder=""
                                             required={true}
                                         />
                                         <InputGroup
@@ -144,7 +170,6 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                                             type="date"
                                             value={jobData.jobAnnouncedDate || ''}
                                             onChange={v => setJobData({ ...jobData, jobAnnouncedDate: v })}
-                                            placeholder=""
                                             required={true}
                                         />
                                     </div>
@@ -167,7 +192,6 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                             </section>
                         </div>
 
-                        {/* Right Column - Filters & Salary */}
                         <div className="space-y-6">
                             <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200 h-full">
                                 <section className="mb-6">
@@ -175,23 +199,69 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                                         <Layers size={12} /> Classify
                                     </h3>
                                     <div className="space-y-4">
-                                        <SelectGroup
-                                            label="Category"
-                                            value={jobData.category}
-                                            onChange={v => setJobData({ ...jobData, category: v, subCategory: '' })}
-                                            options={Object.keys(JOB_CATEGORIES)}
-                                            placeholder="Select"
-                                            required={true}
-                                        />
-                                        <SelectGroup
-                                            label="Sub-Category"
-                                            value={jobData.subCategory}
-                                            onChange={v => setJobData({ ...jobData, subCategory: v })}
-                                            options={jobData.category ? JOB_CATEGORIES[jobData.category] : []}
-                                            disabled={!jobData.category}
-                                            placeholder="Select"
-                                            required={true}
-                                        />
+                                        <div>
+                                            <SelectGroup
+                                                label="Category"
+                                                value={isOtherCategory ? 'Other' : jobData.category}
+                                                onChange={v => {
+                                                    if (v === 'Other') {
+                                                        setIsOtherCategory(true);
+                                                        setJobData({ ...jobData, category: '', subCategory: '', isOtherCategory: true });
+                                                    } else {
+                                                        setIsOtherCategory(false);
+                                                        setJobData({ ...jobData, category: v, subCategory: '', isOtherCategory: false });
+                                                    }
+                                                }}
+                                                options={[...categories, 'Other']}
+                                                placeholder="Select"
+                                                required={true}
+                                            />
+                                            {isOtherCategory && (
+                                                <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                                                    <InputGroup
+                                                        label="Enter Custom Category"
+                                                        icon={Edit3}
+                                                        value={jobData.customCategory}
+                                                        onChange={v => setJobData({ ...jobData, customCategory: v })}
+                                                        placeholder="Manual Entry"
+                                                        required={true}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <SelectGroup
+                                                label="Sub-Category"
+                                                value={isOtherSubCategory ? 'Other' : jobData.subCategory}
+                                                onChange={v => {
+                                                    if (v === 'Other') {
+                                                        setIsOtherSubCategory(true);
+                                                        setJobData({ ...jobData, subCategory: '', isOtherSubCategory: true });
+                                                    } else {
+                                                        setIsOtherSubCategory(false);
+                                                        setJobData({ ...jobData, subCategory: v, isOtherSubCategory: false });
+                                                    }
+                                                }}
+                                                options={isOtherCategory ? ['Other'] : [...subCategories, 'Other']}
+                                                disabled={!jobData.category && !isOtherCategory}
+                                                placeholder="Select"
+                                                required={true}
+                                            />
+                                            {isOtherSubCategory && (
+                                                <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                                                    <InputGroup
+                                                        label="Enter Custom Sub-Category"
+                                                        icon={Edit3}
+                                                        value={jobData.customSubCategory}
+                                                        onChange={v => setJobData({ ...jobData, customSubCategory: v })}
+                                                        placeholder="Manual Entry"
+                                                        required={true}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <SelectGroup
                                             label="Type"
                                             value={jobData.jobType}
@@ -219,7 +289,6 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                         </div>
                     </div>
 
-                    {/* Footer Action */}
                     <div className="mt-6 pt-6 border-t border-slate-100 flex justify-end items-center gap-3">
                         <button
                             type="button"
@@ -228,10 +297,13 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                                 if (window.confirm('Discard changes?')) {
                                     setJobData({
                                         title: '', companyName: '', category: '', subCategory: '',
+                                        customCategory: '', customSubCategory: '',
                                         location: '', salary: '', description: '', requirements: '', jobType: 'Full Time',
                                         contactPhone: '', contactEmail: '', socialMediaImage: null, newspaperImage: null,
                                         socialMediaDate: '', jobAnnouncedDate: ''
                                     });
+                                    setIsOtherCategory(false);
+                                    setIsOtherSubCategory(false);
                                 }
                             }}
                         >
@@ -307,7 +379,6 @@ const SelectGroup = ({ label, value, onChange, options, disabled, placeholder, r
                     <option key={opt} value={opt}>{opt}</option>
                 ))}
             </select>
-            {/* Custom Arrow */}
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-400 scale-75"></div>
         </div>
     </div>

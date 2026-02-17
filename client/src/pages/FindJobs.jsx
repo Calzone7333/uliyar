@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, Briefcase, ChevronDown, Filter, PlusCircle } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import JobCard from '../components/JobCard';
@@ -11,22 +11,32 @@ const FindJobs = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [location, setLocation] = useState("");
     const { openLogin } = useUI();
-    const [openDropdown, setOpenDropdown] = useState(null); // 'category' or 'subcategory'
+    const [openDropdown, setOpenDropdown] = useState(null);
 
-    // Category States
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [selectedSubCategory, setSelectedSubCategory] = useState("All Sub-categories");
-
     const [jobType, setJobType] = useState("All Types");
 
-    // Derived lists
-    const mainCategories = ["All Categories", ...Object.keys(JOB_CATEGORIES)];
-    const subCategories = selectedCategory !== "All Categories" && JOB_CATEGORIES[selectedCategory]
-        ? ["All Sub-categories", ...JOB_CATEGORIES[selectedCategory]]
-        : [];
+    // DYNAMIC CATEGORIES: Merge predefined list with unique categories found in current jobs
+    const mainCategories = useMemo(() => {
+        const predefined = Object.keys(JOB_CATEGORIES);
+        const dynamic = [...new Set(jobs.map(j => j.category).filter(c => c && !predefined.includes(c)))];
+        return ["All Categories", ...predefined, ...dynamic];
+    }, [jobs]);
+
+    // DYNAMIC SUB-CATEGORIES: Merge predefined list for selected category with unique subcategories found in jobs
+    const subCategories = useMemo(() => {
+        if (selectedCategory === "All Categories") return [];
+        const predefined = JOB_CATEGORIES[selectedCategory] || [];
+        const dynamic = [...new Set(jobs
+            .filter(j => j.category === selectedCategory)
+            .map(j => j.subCategory)
+            .filter(s => s && !predefined.includes(s))
+        )];
+        return ["All Sub-categories", ...predefined, ...dynamic];
+    }, [selectedCategory, jobs]);
 
     useEffect(() => {
-        // Reset sub-category when main category changes
         if (selectedCategory === "All Categories") {
             setSelectedSubCategory("All Sub-categories");
         } else if (subCategories.length > 0 && !subCategories.includes(selectedSubCategory)) {
@@ -71,9 +81,7 @@ const FindJobs = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
-            {/* Hero Section */}
             <div className="relative h-[600px] flex flex-col items-center justify-center">
-                {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0">
                     <img
                         src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop"
@@ -81,19 +89,16 @@ const FindJobs = () => {
                         className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-slate-900/90 mix-blend-multiply"></div>
-                    {/* Gradient Fade at bottom */}
                     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-50 to-transparent"></div>
                 </div>
 
                 <div className="relative z-10 w-full max-w-7xl mx-auto px-6 text-center pb-20">
-                    {/* Top Label */}
                     <div className="flex items-center justify-center gap-4 mb-8 animate-in slide-in-from-bottom-5 duration-700">
                         <div className="h-0.5 w-16 bg-primary/30"></div>
                         <span className="text-primary font-bold tracking-[0.2em] text-xs uppercase">India's No.1 Platform</span>
                         <div className="h-0.5 w-16 bg-primary/30"></div>
                     </div>
 
-                    {/* Main Heading */}
                     <div className="inline-block mb-10 animate-in slide-in-from-bottom-5 duration-700 delay-100">
                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tight uppercase drop-shadow-xl font-sans">
                             We Help You <span className="text-primary relative inline-block">
@@ -107,12 +112,9 @@ const FindJobs = () => {
                     </div>
                 </div>
 
-                {/* Search Bar - Floating deeply overlapping */}
                 <div className="absolute -bottom-24 w-full px-4 z-20 animate-in slide-in-from-bottom-10 duration-700 delay-200">
                     <div className="bg-slate-900 p-8 rounded-3xl shadow-[0_30px_60px_-15px_rgba(15,23,42,0.5)] max-w-7xl mx-auto border border-slate-700 backdrop-blur-xl">
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-
-                            {/* Field 1: Keyword (2 cols) */}
                             <div className="md:col-span-2 relative group">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">What</label>
                                 <div className="flex items-center bg-slate-800/50 rounded-xl px-4 py-3 border border-transparent group-focus-within:border-primary hover:bg-slate-800 transition-all">
@@ -127,7 +129,6 @@ const FindJobs = () => {
                                 </div>
                             </div>
 
-                            {/* Field 2: Location (2 cols) */}
                             <div className="md:col-span-2 relative group">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">Where</label>
                                 <div className="flex items-center bg-slate-800/50 rounded-xl px-4 py-3 border border-transparent group-focus-within:border-primary hover:bg-slate-800 transition-all">
@@ -142,14 +143,11 @@ const FindJobs = () => {
                                 </div>
                             </div>
 
-                            {/* Field 3: Category (2 cols) */}
                             <div className="md:col-span-2 relative group dropdown-container">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">Category</label>
                                 <div className="relative">
                                     <button
-                                        onClick={() => {
-                                            setOpenDropdown(openDropdown === 'category' ? null : 'category');
-                                        }}
+                                        onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
                                         className="relative flex items-center w-full bg-white rounded-xl px-4 py-3 border border-gray-200 hover:border-blue-200 transition-all text-left shadow-sm active:scale-[0.98]"
                                     >
                                         <span className={`font-semibold text-sm truncate pr-6 ${selectedCategory !== 'All Categories' ? 'text-blue-600' : 'text-slate-600'}`}>
@@ -177,7 +175,6 @@ const FindJobs = () => {
                                 </div>
                             </div>
 
-                            {/* Field 4: Sub-Category (2 cols) */}
                             <div className="md:col-span-2 relative group dropdown-container">
                                 <label className="block text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-2 pl-1">Sub Category</label>
                                 <div className="relative">
@@ -215,43 +212,36 @@ const FindJobs = () => {
                                 </div>
                             </div>
 
-                            {/* Field 5: Search Button (2 cols) */}
                             <div className="md:col-span-2">
                                 <button
                                     onClick={fetchJobs}
                                     className="w-full bg-primary hover:bg-teal-600 text-white font-black h-[58px] rounded-xl transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-lg shadow-teal-900/20 hover:shadow-teal-900/40 flex items-center justify-center border border-primary/20"
-                                    title="Search Jobs"
                                 >
                                     <Search size={24} />
                                 </button>
                             </div>
 
-                            {/* Field 6: Post Job Button (2 cols) */}
                             <div className="md:col-span-2">
                                 <button
                                     onClick={openLogin}
                                     className="w-full bg-white hover:bg-teal-50 text-slate-900 font-bold h-[58px] rounded-xl transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-lg flex items-center justify-center border border-gray-200 group"
-                                    title="Post a Job"
                                 >
                                     <PlusCircle size={20} className="text-primary mr-2 group-hover:scale-110 transition-transform" />
                                     <span className="text-sm lg:text-base">Post Job</span>
                                 </button>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Content Section */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-48 pb-24">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8 border-b border-gray-200 pb-8">
                     <div>
                         <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Recommended Jobs</h2>
-                        <p className="text-slate-500 font-medium">Based on your recent search activity</p>
+                        <p className="text-slate-500 font-medium">Based on available opportunities</p>
                     </div>
 
-                    {/* Job Type Pills */}
                     <div className="flex flex-wrap gap-3">
                         {["All Types", "Full Time", "Part Time", "Contract"].map((type) => (
                             <button
@@ -268,7 +258,6 @@ const FindJobs = () => {
                     </div>
                 </div>
 
-                {/* Job List Stack */}
                 <div className="flex flex-col gap-6 max-w-5xl mx-auto">
                     {loading ? (
                         [...Array(4)].map((_, i) => (
@@ -292,7 +281,7 @@ const FindJobs = () => {
                                 <Search size={32} className="text-slate-300" />
                             </div>
                             <h3 className="text-2xl font-bold text-slate-900 mb-2">No jobs found</h3>
-                            <p className="text-slate-500 mb-8 max-w-md mx-auto">We couldn't find any jobs matching your criteria. Try different keywords or locations.</p>
+                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Try different keywords or filters.</p>
                             <button onClick={() => { setSearchQuery(""); setLocation(""); setSelectedCategory("All Categories"); setSelectedSubCategory("All Sub-categories"); setJobType("All Types") }} className="text-primary font-bold hover:underline text-base">
                                 Clear all filters
                             </button>
