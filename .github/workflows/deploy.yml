@@ -14,72 +14,57 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      ############################
       # 2️⃣ Setup Node.js
-      ############################
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      ############################
       # 3️⃣ Setup SSH for Deployment
-      ############################
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      ############################
       # 4️⃣ Build Frontend (React)
-      ############################
       - name: Build Frontend
         run: |
+          cd client
           npm install
           npm run build
 
-      ############################
       # 5️⃣ Deploy Backend files (server/)
-      ############################
       - name: Deploy Backend
         run: |
-          # Sync server folder (excluding node_modules)
-          rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          # Sync server folder (excluding node_modules and database)
+          rsync -avz --delete --exclude 'node_modules' --exclude 'database.sqlite' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           server/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 
-      ############################
       # 6️⃣ Deploy Frontend (dist folder)
-      ############################
       - name: Deploy Frontend
         run: |
           rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
-          dist/ \
+          client/dist/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
 
-      ############################
-      # 7️⃣ Copy Frontend to Apache Dir (Matched with Kanakkaalar Style)
-      ############################
-      - name: Copy Frontend
-        run: |
-          # We assume prakash has permission to write to /var/www/uliyar
-          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/"
-
-      ############################
-      # 8️⃣ Restart Backend Application
-      ############################
-      - name: Restart Backend
+      # 7️⃣ Copy Frontend to Apache Dir
+      - name: Finalize Deployment
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            # Stop existing backend if running (Kanakkaalar style)
-            pkill -f 'node index.js' || true
+            # 1. Update Frontend in Apache directory
+            sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/
             
-            # Navigate to server directory and install production deps
+            # 2. Setup/Restart Backend
             cd /home/prakash/apps/uliyar/server
             npm install --production
-
-            # Start new backend in background
-            nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
-            echo "Deployment Complete!"
+            # Use PM2 for process management (more reliable than nohup)
+            if pm2 list | grep -q "uliyar-api"; then
+              pm2 restart uliyar-api
+            else
+              pm2 start index.js --name "uliyar-api"
+            fi
+            
+            echo "Deployment Successful!"
           EOF

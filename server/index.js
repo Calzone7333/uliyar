@@ -62,8 +62,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'hado',
-    password: 'Hadoglobal@123',
+    user: 'root',
+    password: 'root',
     database: 'uliyar_db',
     waitForConnections: true,
     connectionLimit: 10,
@@ -166,7 +166,9 @@ function runMigrations() {
         { table: 'jobs', col: 'status TEXT' },
         { table: 'jobs', col: 'category TEXT' },
         { table: 'users', col: 'interested_category TEXT' },
-        { table: 'users', col: 'target_roles TEXT' }
+        { table: 'users', col: 'target_roles TEXT' },
+        { table: 'companies', col: 'business_proof_path TEXT' },
+        { table: 'companies', col: 'id_proof_path TEXT' }
     ];
     columns.forEach(mig => {
         // MySQL check if column exists is complex, but we can try IGNORE or just catch error
@@ -181,11 +183,23 @@ function initializeSettings() {
         if (!err) {
             db.get("SELECT value FROM settings WHERE \`key\` = 'admin_password'", (err, row) => {
                 if (!row) {
-                    db.run("INSERT INTO settings (\`key\`, value) VALUES ('admin_password', 'admin@2025')");
+                    db.run("INSERT INTO settings (\`key\`, value) VALUES ('admin_password', 'AdminCalzone@2026')");
+                } else if (row.value === 'admin@2025') {
+                    // Update old default password to new requested one
+                    db.run("UPDATE settings SET value = 'AdminCalzone@2026' WHERE \`key\` = 'admin_password'");
                 }
             });
         }
     });
+
+    // Ensure Deepak Admin account exists in users table
+    db.get("SELECT id FROM users WHERE email = 'deepakcalzone@gmail.com'", (err, row) => {
+        if (!row) {
+            console.log('🚀 Initializing Admin User: deepakcalzone@gmail.com');
+            db.run("INSERT INTO users (name, email, password, role, account_status, email_verified, otp_verified, profile_status) VALUES ('Deepak', 'deepakcalzone@gmail.com', 'AdminCalzone@2026', 'admin', 'ACTIVE', 1, 1, 'COMPLETE')");
+        }
+    });
+
     runMigrations();
 }
 
@@ -247,6 +261,8 @@ function createTables() {
         location VARCHAR(255),
         logo_path VARCHAR(255),
         doc_path VARCHAR(255),
+        business_proof_path VARCHAR(255),
+        id_proof_path VARCHAR(255),
         status VARCHAR(20) DEFAULT 'PENDING' -- PENDING -> APPROVED -> REJECTED
     )`);
 
@@ -288,7 +304,7 @@ function createTables() {
 // ----------------------------------------------------
 
 // 1. Register & Send Real OTP
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
     const { name, email, password, role, mobile, companyName } = req.body;
     if (!name || !email || !password || !role || !mobile) return res.status(400).json({ error: "All fields are required" });
 
@@ -296,12 +312,13 @@ app.post('/api/auth/register', (req, res) => {
     const realOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
     // Check email unique first
-    db.get("SELECT id FROM users WHERE email = ?", [email], (err, row) => {
+    db.get("SELECT id FROM users WHERE email = ?", [email], async (err, row) => {
         if (row) return res.status(400).json({ error: "Email already exists" });
 
+        const hashedPassword = await bcrypt.hash(password, 10);
         const sql = `INSERT INTO users (name, email, password, role, companyName, mobile, temp_otp, account_status) VALUES (?, ?, ?, ?, ?, ?, ?, 'INACTIVE')`;
 
-        db.run(sql, [name, email, password, role, companyName || null, mobile, realOtp], function (err) {
+        db.run(sql, [name, email, hashedPassword, role, companyName || null, mobile, realOtp], function (err) {
             if (err) return res.status(500).json({ error: err.message });
 
             const userId = this.lastID;
@@ -368,14 +385,15 @@ app.post('/api/auth/forgot-password', (req, res) => {
 });
 
 // 4. Reset Password
-app.post('/api/auth/reset-password', (req, res) => {
+app.post('/api/auth/reset-password', async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
-    db.get("SELECT id, temp_otp FROM users WHERE email = ?", [email], (err, row) => {
+    db.get("SELECT id, temp_otp FROM users WHERE email = ?", [email], async (err, row) => {
         if (!row) return res.status(404).json({ success: false, message: "User not found" });
 
         if (row.temp_otp === otp) {
-            db.run("UPDATE users SET password = ?, temp_otp = NULL WHERE id = ?", [newPassword, row.id], (err) => {
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            db.run("UPDATE users SET password = ?, temp_otp = NULL WHERE id = ?", [hashedPassword, row.id], (err) => {
                 if (err) return res.status(500).json({ error: err.message });
                 res.json({ success: true, message: "Password updated successfully" });
             });
@@ -413,16 +431,23 @@ app.get('/api/company/status/:userId', (req, res) => {
 });
 
 // 2. Create Company (PENDING by default)
-app.post('/api/company/create', upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), (req, res) => {
+app.post('/api/company/create', upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'doc', maxCount: 1 },
+    { name: 'businessProof', maxCount: 1 },
+    { name: 'idProof', maxCount: 1 }
+]), (req, res) => {
     const { recruiterId, name, type, industry, size, location, website } = req.body;
 
     const files = req.files || {};
     const logoPath = files['logo'] ? `/uploads/${files['logo'][0].filename}` : '';
     const docPath = files['doc'] ? `/uploads/${files['doc'][0].filename}` : '';
+    const businessProofPath = files['businessProof'] ? `/uploads/${files['businessProof'][0].filename}` : '';
+    const idProofPath = files['idProof'] ? `/uploads/${files['idProof'][0].filename}` : '';
 
-    const sql = `INSERT INTO companies (recruiterId, name, type, industry, size, location, website, logo_path, doc_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')`;
+    const sql = `INSERT INTO companies (recruiterId, name, type, industry, size, location, website, logo_path, doc_path, business_proof_path, id_proof_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')`;
 
-    db.run(sql, [recruiterId, name, type, industry, size, location, website, logoPath, docPath], function (err) {
+    db.run(sql, [recruiterId, name, type, industry, size, location, website, logoPath, docPath, businessProofPath, idProofPath], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         const companyId = this.lastID;
         db.run("UPDATE users SET company_id = ?, profile_status = 'COMPLETE' WHERE id = ?", [companyId, recruiterId]);
@@ -592,10 +617,16 @@ app.get('/api/jobs', (req, res) => {
     });
 });
 
+const bcrypt = require('bcryptjs');
+
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
-    db.get("SELECT * FROM users WHERE email = ? AND password = ?", [email, password], (err, row) => {
+    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, row) => {
         if (row) {
+            const isMatch = await bcrypt.compare(password, row.password);
+            if (!isMatch && password !== row.password) { // Fallback for old plaintext passwords during transition
+                return res.status(401).json({ success: false, message: "Invalid credentials" });
+            }
             if (row.account_status !== 'ACTIVE') return res.status(403).json({ success: false, message: "Verify OTP first." });
             res.json({ success: true, user: row });
         } else { res.status(401).json({ success: false, message: "Invalid" }); }
@@ -699,11 +730,29 @@ app.post('/api/admin/login', (req, res) => {
     const { password } = req.body;
     db.get("SELECT value FROM settings WHERE key = 'admin_password'", (err, row) => res.json({ success: row && row.value === password }));
 });
+app.get('/api/admin/jobs', (req, res) => {
+    db.all("SELECT * FROM jobs WHERE employerId = 0 ORDER BY id DESC", (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/admin/post-job', (req, res) => {
+    const { title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate } = req.body;
+
+    // Admin jobs are employerId = 0 and status = 'OPEN'
+    const sql = `INSERT INTO jobs (title, company, category, location, salary, description, type, status, employerId, postedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?)`;
+    const postedAt = new Date().toLocaleDateString();
+
+    db.run(sql, [title, companyName, category, location, salary, description, jobType, postedAt], function (err) {
+        if (err) return res.status(500).json({ success: false, message: err.message });
+        res.json({ success: true, jobId: this.lastID });
+    });
+});
+
 app.get('/api/job-applications/:jobId', (req, res) => { db.all("SELECT * FROM applications WHERE jobId = ?", [req.params.jobId], (err, rows) => res.json(rows)); });
 app.get('/api/my-applications', (req, res) => { db.all(`SELECT a.*, j.company, j.location from applications a LEFT JOIN jobs j ON a.jobId = j.id WHERE a.applicantId = ?`, [req.query.applicantId], (err, rows) => res.json(rows)); });
 app.patch('/api/applications/:id/status', (req, res) => { db.run("UPDATE applications SET status = ? WHERE id = ?", [req.body.status, req.params.id], (err) => res.json({ success: true })); });
-
-// 3. User & Company Management (Delete)
 app.get('/api/admin/users', (req, res) => {
     db.all("SELECT * FROM users ORDER BY created_at DESC", (err, rows) => res.json(rows));
 });
@@ -727,6 +776,15 @@ app.delete('/api/admin/users/:id', (req, res) => {
 
 app.get('/api/admin/companies', (req, res) => {
     db.all("SELECT * FROM companies ORDER BY id DESC", (err, rows) => res.json(rows));
+});
+
+app.patch('/api/admin/users/:id/role', (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    db.run("UPDATE users SET role = ? WHERE id = ?", [role, id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
 });
 
 app.delete('/api/admin/companies/:id', (req, res) => {
