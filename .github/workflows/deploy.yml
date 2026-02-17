@@ -46,12 +46,12 @@ jobs:
         run: |
           rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           client/dist/ \
-          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/client/dist/
 
       # 7️⃣ Copy Frontend to Apache Dir (Matched with Kanakkaalar Style)
       - name: Copy Frontend
         run: |
-          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/"
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "sudo cp -r /home/prakash/apps/uliyar/client/dist/* /var/www/uliyar/"
 
       # 8️⃣ Restart Backend Application
       - name: Restart Backend
