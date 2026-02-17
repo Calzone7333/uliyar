@@ -1,74 +1,74 @@
-name: Deploy Uliyar (Full Mirror Style)
+name: Deploy Uliyar (Backend + Frontend)
 
 on:
   push:
     branches:
-      - main
+      - main  # deploy only when pushing to main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # 3️⃣ Setup SSH for Deployment
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 1️⃣ Build Frontend locally in GitHub Action
+      # 4️⃣ Build Frontend (React)
       - name: Build Frontend
         run: |
           cd client
           npm install
           npm run build
-          echo "✅ Build complete. Checking dist contents:"
-          ls -F dist/
 
-      # 2️⃣ Sync the ENTIRE project folder to the server
-      # This ensures local structure = server structure
-      - name: Sync Project to Server
+      # 5️⃣ Deploy Backend files (server/)
+      # Note: Removed sqlite exclusion as per request (using MySQL now)
+      - name: Deploy Backend
         run: |
-          rsync -avz --delete \
-          --exclude 'node_modules' \
-          --exclude 'client/node_modules' \
-          --exclude 'server/node_modules' \
-          --exclude 'database.sqlite' \
-          --exclude '.git' \
-          -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
-          ./ \
-          prakash@103.181.108.248:/home/prakash/apps/uliyar/
+          rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          server/ \
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 
-      # 3️⃣ Verify and Finalize on Server
-      - name: Finalize & Restart
+      # 6️⃣ Deploy Frontend (dist folder)
+      - name: Deploy Frontend
+        run: |
+          rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          client/dist/ \
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
+
+      # 7️⃣ Copy Frontend to Apache Dir (Matched with Kanakkaalar Style)
+      - name: Copy Frontend
+        run: |
+          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/"
+
+      # 8️⃣ Restart Backend Application
+      - name: Restart Backend
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            echo "📂 Verifying Server Paths..."
-            ls -ld /home/prakash/apps/uliyar/server
-            ls -l /home/prakash/apps/uliyar/server/index.js
+            # Stop existing backend if running (Kanakkaalar style)
+            pkill -f 'node index.js' || true
             
-            # Update Apache Directory with fresh build
-            # Using rsync here is safer than cp
-            sudo rsync -avz --delete /home/prakash/apps/uliyar/client/dist/ /var/www/uliyar/
-            
-            # Setup Backend
+            # Navigate to server directory and install production deps
             cd /home/prakash/apps/uliyar/server
             npm install --production
+
+            # Start new backend in background
+            nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
-            # Precise Restart
-            echo "🔄 Restarting Backend on Port 8082..."
-            fuser -k 8082/tcp || true
-            nohup node index.js > app.log 2>&1 &
-            
-            # Restart Apache
+            # Restart Apache to ensure pathing is fresh
             sudo systemctl restart apache2
             
-            echo "🚀 Deployment Verified and Complete!"
+            echo "Deployment Complete!"
           EOF
