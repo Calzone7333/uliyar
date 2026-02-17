@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, MapPin, Briefcase, ChevronDown, Filter, PlusCircle } from 'lucide-react';
-import { useUI } from '../context/UIContext';
+import { Search, MapPin, Briefcase, ChevronDown, Filter, PlusCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import JobCard from '../components/JobCard';
 import { API_BASE_URL } from '../config';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
@@ -11,6 +12,8 @@ const FindJobs = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [location, setLocation] = useState("");
     const { openLogin } = useUI();
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [openDropdown, setOpenDropdown] = useState(null);
 
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -223,7 +226,17 @@ const FindJobs = () => {
 
                             <div className="md:col-span-2">
                                 <button
-                                    onClick={openLogin}
+                                    onClick={() => {
+                                        if (!user) {
+                                            openLogin();
+                                        } else if (user.role === 'admin') {
+                                            navigate('/admin', { state: { activeTab: 'post_job' } });
+                                        } else if (user.role === 'employer') {
+                                            navigate('/employer-dashboard', { state: { openPostModal: true } });
+                                        } else {
+                                            alert("Workers cannot post jobs. Please register as an Employer.");
+                                        }
+                                    }}
                                     className="w-full bg-white hover:bg-teal-50 text-slate-900 font-bold h-[58px] rounded-xl transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-lg flex items-center justify-center border border-gray-200 group"
                                 >
                                     <PlusCircle size={20} className="text-primary mr-2 group-hover:scale-110 transition-transform" />
@@ -258,7 +271,7 @@ const FindJobs = () => {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
                     {loading ? (
                         [...Array(4)].map((_, i) => (
                             <div key={i} className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm animate-pulse h-52 w-full">

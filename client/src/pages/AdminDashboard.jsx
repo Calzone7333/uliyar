@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, Loader, Briefcase, PlusCircle, Trash2 } from 'lucide-react';
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
     const [isPosting, setIsPosting] = useState(false);
 
     const navigate = useNavigate();
+    const location = useLocation();
     const { logout } = useAuth();
 
     const stats = {
@@ -41,8 +42,14 @@ const AdminDashboard = () => {
     };
 
     useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+            // Clear state so it doesn't persist on refresh if we don't want it to, 
+            // or just leave it. Clearing is safer to avoid stuck state.
+            navigate(location.pathname, { replace: true, state: {} });
+        }
         fetchAllData();
-    }, []);
+    }, [location, navigate]);
 
     const fetchAllData = () => {
         setIsLoading(true);
@@ -230,36 +237,70 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
                             <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
-                                        <tr>
-                                            <th className="px-6 py-4 text-primary">Job Title</th>
-                                            <th className="px-6 py-4">Company</th>
-                                            <th className="px-6 py-4">Location</th>
-                                            <th className="px-6 py-4">Salary</th>
-                                            <th className="px-6 py-4 text-center">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {adminJobs.length > 0 ? adminJobs.map(job => (
-                                            <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                <td className="px-6 py-4 font-bold text-slate-700">{job.title}</td>
-                                                <td className="px-6 py-4 text-slate-500 text-sm font-medium">{job.company}</td>
-                                                <td className="px-6 py-4 text-slate-500 text-sm">{job.location}</td>
-                                                <td className="px-6 py-4 text-slate-500 text-sm">{job.salary}</td>
-                                                <td className="px-6 py-4">
-                                                    <button onClick={() => deleteAdminJob(job.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all mx-auto block">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left whitespace-nowrap">
+                                        <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
                                             <tr>
-                                                <td colSpan="5" className="px-6 py-12 text-center text-slate-400 italic">No admin jobs found.</td>
+                                                <th className="px-6 py-4 text-primary">Job Title</th>
+                                                <th className="px-6 py-4">Company</th>
+                                                <th className="px-6 py-4">Cat / Sub-Cat</th>
+                                                <th className="px-6 py-4">Location</th>
+                                                <th className="px-6 py-4">Salary</th>
+                                                <th className="px-6 py-4">Contact</th>
+                                                <th className="px-6 py-4">Dates (Social/Ann)</th>
+                                                <th className="px-6 py-4">Images</th>
+                                                <th className="px-6 py-4 text-center">Actions</th>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {adminJobs.length > 0 ? adminJobs.map(job => (
+                                                <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                    <td className="px-6 py-4 font-bold text-slate-700">{job.title}</td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm font-medium">{job.company}</td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold">{job.category}</span>
+                                                            <span className="text-xs text-slate-400">{job.subCategory}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">{job.location}</td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">₹ {job.salary}</td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">
+                                                        <div className="flex flex-col">
+                                                            <span>{job.contactPhone}</span>
+                                                            <span className="text-xs text-blue-500">{job.contactEmail}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">S: {job.socialMediaDate || '-'}</span>
+                                                            <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded">A: {job.jobAnnouncedDate || '-'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500 text-sm">
+                                                        <div className="flex gap-2">
+                                                            {job.socialMediaImage && (
+                                                                <a href={`${API_BASE_URL}${job.socialMediaImage}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">Social Img</a>
+                                                            )}
+                                                            {job.newspaperImage && (
+                                                                <a href={`${API_BASE_URL}${job.newspaperImage}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">Paper Img</a>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <button onClick={() => deleteAdminJob(job.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all mx-auto block">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="9" className="px-6 py-12 text-center text-slate-400 italic">No admin jobs found.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
