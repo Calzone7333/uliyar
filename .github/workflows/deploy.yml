@@ -34,7 +34,6 @@ jobs:
           npm run build
 
       # 5️⃣ Deploy Backend files (server/)
-      # Note: Removed sqlite exclusion as per request (using MySQL now)
       - name: Deploy Backend
         run: |
           rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
@@ -48,26 +47,24 @@ jobs:
           client/dist/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/client/dist/
 
-      # 7️⃣ Copy Frontend to Apache Dir (Matched with Kanakkaalar Style)
-      - name: Copy Frontend
-        run: |
-          ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 "sudo cp -r /home/prakash/apps/uliyar/client/dist/* /var/www/uliyar/"
-
-      # 8️⃣ Restart Backend Application
-      - name: Restart Backend
+      ###########################################################
+      # 7️⃣ Finalize Deployment (Copy to Apache & Restart)
+      ###########################################################
+      - name: Finalize & Restart
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            # Stop existing backend if running (Kanakkaalar style)
-            pkill -f 'node index.js' || true
+            # 1. Copy Frontend (Removed sudo to avoid password error)
+            cp -r /home/prakash/apps/uliyar/client/dist/* /var/www/uliyar/
             
-            # Navigate to server directory and install production deps
+            # 2. Setup Backend
             cd /home/prakash/apps/uliyar/server
             npm install --production
 
-            # Start new backend in background
+            # 3. Restart Backend
+            pkill -f 'node index.js' || true
             nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
             
-            # Restart Apache to ensure pathing is fresh
+            # 4. Restart Apache (Ensure NOPASSWD is set on server for this command)
             sudo systemctl restart apache2
             
             echo "Deployment Complete!"
