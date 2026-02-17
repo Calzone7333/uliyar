@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, Briefcase, ChevronDown, Filter, PlusCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import JobCard from '../components/JobCard';
 import { API_BASE_URL } from '../config';
