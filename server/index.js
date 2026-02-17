@@ -171,6 +171,7 @@ function runMigrations() {
         { table: 'jobs', col: 'postedAt TEXT' },
         { table: 'jobs', col: 'status TEXT' },
         { table: 'jobs', col: 'category TEXT' },
+        { table: 'jobs', col: 'subCategory TEXT' },
         { table: 'users', col: 'interested_category TEXT' },
         { table: 'users', col: 'target_roles TEXT' },
         { table: 'companies', col: 'business_proof_path TEXT' },
@@ -275,18 +276,28 @@ function createTables() {
     // JOBS
     db.run(`CREATE TABLE IF NOT EXISTS jobs (
         id INT PRIMARY KEY AUTO_INCREMENT,
-        employerId INT,
-        companyId INT,
+        employerId INT DEFAULT 0,
+        companyId INT DEFAULT 0,
         title VARCHAR(255) NOT NULL,
         company VARCHAR(255) NOT NULL,
         location VARCHAR(255) NOT NULL,
         type VARCHAR(50) NOT NULL,
-        salary VARCHAR(100) NOT NULL,
-        experience VARCHAR(100) NOT NULL,
+        salary VARCHAR(100),
+        experience VARCHAR(100),
+        description TEXT,
+        skills_required TEXT,
+        vacancies INT DEFAULT 1,
+        work_mode VARCHAR(100),
+        benefits TEXT,
+        deadline VARCHAR(100),
+        education_required TEXT,
+        food_allowance VARCHAR(100),
+        accommodation VARCHAR(100),
         tags TEXT,
-        postedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        status VARCHAR(20) DEFAULT 'PENDING', -- PENDING -> OPEN -> REJECTED -> CLOSED
-        category VARCHAR(100)
+        postedAt VARCHAR(100),
+        status VARCHAR(20) DEFAULT 'PENDING',
+        category VARCHAR(100),
+        subCategory VARCHAR(100)
     )`);
 
     // APPLICATIONS
@@ -496,10 +507,10 @@ app.post('/api/jobs', (req, res) => {
             const tagsString = JSON.stringify(tags || []);
             const finalCompanyName = comp.name || company;
 
-            const sql = `INSERT INTO jobs(title, company, location, type, salary, experience, tags, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, postedAt, employerId, companyId, status, category) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Just now", ?, ?, 'PENDING', ?)`;
+            const sql = `INSERT INTO jobs(title, company, location, type, salary, experience, tags, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, postedAt, employerId, companyId, status, category, subCategory) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Just now", ?, ?, 'PENDING', ?, ?)`;
 
             db.run(sql,
-                [title, finalCompanyName, location, type, salary, experience, tagsString, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, employerId, comp.id, category], function (err) {
+                [title, finalCompanyName, location, type, salary, experience, tagsString, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, employerId, comp.id, category, req.body.subCategory || ''], function (err) {
                     if (err) return res.status(500).json({ error: err.message });
                     res.status(201).json({ id: this.lastID, message: "Job submitted for Admin Approval" });
                 });
@@ -749,11 +760,15 @@ app.post('/api/admin/post-job', (req, res) => {
     const { title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate } = req.body;
 
     // Admin jobs are employerId = 0 and status = 'OPEN'
-    const sql = `INSERT INTO jobs (title, company, category, subCategory, location, salary, description, type, status, employerId, postedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?)`;
+    // added experience placeholder to match table even if empty
+    const sql = `INSERT INTO jobs (title, company, category, subCategory, location, salary, description, type, status, employerId, postedAt, experience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?, 'N/A')`;
     const postedAt = new Date().toLocaleDateString();
 
     db.run(sql, [title, companyName, category, subCategory, location, salary, description, jobType, postedAt], function (err) {
-        if (err) return res.status(500).json({ success: false, message: err.message });
+        if (err) {
+            console.error("Admin job post error:", err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
         res.json({ success: true, jobId: this.lastID });
     });
 });
