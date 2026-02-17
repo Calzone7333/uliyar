@@ -48,23 +48,26 @@ jobs:
           client/dist/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
 
-      # 7️⃣ Copy Frontend to Apache Dir
+      # 7️⃣ Sync to Web Directory and Restart Services (Apache2 Style)
       - name: Finalize Deployment
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            # 1. Update Frontend in Apache directory
+            # Update Frontend in Apache directory
             sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/
             
-            # 2. Setup/Restart Backend
+            # Navigate to server directory
             cd /home/prakash/apps/uliyar/server
             npm install --production
             
-            # Use PM2 for process management (more reliable than nohup)
-            if pm2 list | grep -q "uliyar-api"; then
-              pm2 restart uliyar-api
-            else
-              pm2 start index.js --name "uliyar-api"
-            fi
+            # Restart Backend using nohup (No PM2 required)
+            # Find and kill any existing node process running index.js
+            pkill -f 'node index.js' || true
             
-            echo "Deployment Successful!"
+            # Start backend in background using nohup
+            nohup node index.js > app.log 2>&1 &
+            
+            # Restart Apache2 to ensure everything is fresh
+            sudo systemctl restart apache2
+            
+            echo "Deployment Complete with Apache2!"
           EOF
