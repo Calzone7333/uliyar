@@ -104,10 +104,17 @@ const AdminDashboard = () => {
     const handlePostJob = async (jobData, onSuccess) => {
         setIsPosting(true);
         try {
+            const formData = new FormData();
+            Object.keys(jobData).forEach(key => {
+                if (jobData[key] !== null && jobData[key] !== undefined) {
+                    formData.append(key, jobData[key]);
+                }
+            });
+
             const response = await fetch(`${API_BASE_URL}/api/admin/post-job`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(jobData),
+                // Content-Type is set automatically by the browser for FormData
+                body: formData,
             });
             const data = await response.json();
             if (data.success) {

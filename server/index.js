@@ -172,6 +172,12 @@ function runMigrations() {
         { table: 'jobs', col: 'status TEXT' },
         { table: 'jobs', col: 'category TEXT' },
         { table: 'jobs', col: 'subCategory TEXT' },
+        { table: 'jobs', col: 'contactPhone TEXT' },
+        { table: 'jobs', col: 'contactEmail TEXT' },
+        { table: 'jobs', col: 'socialMediaDate TEXT' },
+        { table: 'jobs', col: 'jobAnnouncedDate TEXT' },
+        { table: 'jobs', col: 'socialMediaImage TEXT' },
+        { table: 'jobs', col: 'newspaperImage TEXT' },
         { table: 'users', col: 'interested_category TEXT' },
         { table: 'users', col: 'target_roles TEXT' },
         { table: 'companies', col: 'business_proof_path TEXT' },
@@ -297,7 +303,13 @@ function createTables() {
         postedAt VARCHAR(100),
         status VARCHAR(20) DEFAULT 'PENDING',
         category VARCHAR(100),
-        subCategory VARCHAR(100)
+        subCategory VARCHAR(100),
+        contactPhone VARCHAR(50),
+        contactEmail VARCHAR(100),
+        socialMediaDate VARCHAR(50),
+        jobAnnouncedDate VARCHAR(50),
+        socialMediaImage VARCHAR(255),
+        newspaperImage VARCHAR(255)
     )`);
 
     // APPLICATIONS
@@ -756,15 +768,22 @@ app.get('/api/admin/jobs', (req, res) => {
     });
 });
 
-app.post('/api/admin/post-job', (req, res) => {
+app.post('/api/admin/post-job', upload.fields([
+    { name: 'socialMediaImage', maxCount: 1 },
+    { name: 'newspaperImage', maxCount: 1 }
+]), (req, res) => {
     const { title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate } = req.body;
+
+    const files = req.files || {};
+    const socialMediaImagePath = files['socialMediaImage'] ? `/uploads/${files['socialMediaImage'][0].filename}` : null;
+    const newspaperImagePath = files['newspaperImage'] ? `/uploads/${files['newspaperImage'][0].filename}` : null;
 
     // Admin jobs are employerId = 0 and status = 'OPEN'
     // added experience placeholder to match table even if empty
-    const sql = `INSERT INTO jobs (title, company, category, subCategory, location, salary, description, type, status, employerId, postedAt, experience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?, 'N/A')`;
-    const postedAt = new Date().toLocaleDateString();
+    const sql = `INSERT INTO jobs (title, company, category, subCategory, location, salary, description, type, status, employerId, postedAt, experience, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate, socialMediaImage, newspaperImage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', 0, ?, 'N/A', ?, ?, ?, ?, ?, ?)`;
+    const postedAt = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format: YYYY-MM-DD HH:MM:SS
 
-    db.run(sql, [title, companyName, category, subCategory, location, salary, description, jobType, postedAt], function (err) {
+    db.run(sql, [title, companyName, category, subCategory, location, salary, description, jobType, postedAt, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate, socialMediaImagePath, newspaperImagePath], function (err) {
         if (err) {
             console.error("Admin job post error:", err);
             return res.status(500).json({ success: false, message: err.message });
