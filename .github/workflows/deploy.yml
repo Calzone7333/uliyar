@@ -3,71 +3,64 @@ name: Deploy Uliyar (Backend + Frontend)
 on:
   push:
     branches:
-      - main  # deploy only when pushing to main branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      # 3️⃣ Setup SSH for Deployment
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Build Frontend (React)
       - name: Build Frontend
         run: |
           cd client
           npm install
           npm run build
 
-      # 5️⃣ Deploy Backend files (server/)
-      - name: Deploy Backend
+      - name: Deploy Backend files (server/)
         run: |
-          # Sync server folder (excluding node_modules and database)
-          rsync -avz --delete --exclude 'node_modules' --exclude 'database.sqlite' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          # We transfer files but EXCLUDE .git to avoid messing up server git state
+          rsync -avz --delete --exclude 'node_modules' --exclude 'database.sqlite' --exclude '.git' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           server/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 
-      # 6️⃣ Deploy Frontend (dist folder)
-      - name: Deploy Frontend
+      - name: Deploy Frontend (dist folder)
         run: |
           rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           client/dist/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
 
-      # 7️⃣ Sync to Web Directory and Restart Services (Apache2 Style)
-      - name: Finalize Deployment
+      - name: Finalize Deployment (Apache2 + Restart)
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            # Update Frontend in Apache directory
+            # 1. Update Apache public directory
             sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/
             
-            # Navigate to server directory
+            # 2. Setup Backend
             cd /home/prakash/apps/uliyar/server
             npm install --production
             
-            # Restart Backend using nohup (No PM2 required)
-            # Find and kill any existing node process running index.js
-            pkill -f 'node index.js' || true
+            # 3. Secure Restart (Kill exactly the node process for this app)
+            # Find and kill the process using port 8082 (your backend port)
+            fuser -k 8082/tcp || true
             
-            # Start backend in background using nohup
+            # Start backend
             nohup node index.js > app.log 2>&1 &
             
-            # Restart Apache2 to ensure everything is fresh
+            # 4. Final Refresh
             sudo systemctl restart apache2
             
-            echo "Deployment Complete with Apache2!"
+            echo "✅ Deployment Successful! Check app.log for any MySQL errors."
           EOF
