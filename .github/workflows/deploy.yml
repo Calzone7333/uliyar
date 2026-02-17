@@ -1,4 +1,4 @@
-name: Deploy Uliyar (Backend + Frontend)
+name: Deploy Uliyar (Full Mirror Style)
 
 on:
   push:
@@ -23,44 +23,52 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      # 1️⃣ Build Frontend locally in GitHub Action
       - name: Build Frontend
         run: |
           cd client
           npm install
           npm run build
+          echo "✅ Build complete. Checking dist contents:"
+          ls -F dist/
 
-      - name: Deploy Backend files (server/)
+      # 2️⃣ Sync the ENTIRE project folder to the server
+      # This ensures local structure = server structure
+      - name: Sync Project to Server
         run: |
-          # We transfer files but EXCLUDE .git to avoid messing up server git state
-          rsync -avz --delete --exclude 'node_modules' --exclude 'database.sqlite' --exclude '.git' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
-          server/ \
-          prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
+          rsync -avz --delete \
+          --exclude 'node_modules' \
+          --exclude 'client/node_modules' \
+          --exclude 'server/node_modules' \
+          --exclude 'database.sqlite' \
+          --exclude '.git' \
+          -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          ./ \
+          prakash@103.181.108.248:/home/prakash/apps/uliyar/
 
-      - name: Deploy Frontend (dist folder)
-        run: |
-          rsync -avz --delete -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
-          client/dist/ \
-          prakash@103.181.108.248:/home/prakash/apps/uliyar/frontend/dist/
-
-      - name: Finalize Deployment (Apache2 + Restart)
+      # 3️⃣ Verify and Finalize on Server
+      - name: Finalize & Restart
         run: |
           ssh -p 19919 -o StrictHostKeyChecking=no prakash@103.181.108.248 << 'EOF'
-            # 1. Update Apache public directory
-            sudo cp -r /home/prakash/apps/uliyar/frontend/dist/* /var/www/uliyar/
+            echo "📂 Verifying Server Paths..."
+            ls -ld /home/prakash/apps/uliyar/server
+            ls -l /home/prakash/apps/uliyar/server/index.js
             
-            # 2. Setup Backend
+            # Update Apache Directory with fresh build
+            # Using rsync here is safer than cp
+            sudo rsync -avz --delete /home/prakash/apps/uliyar/client/dist/ /var/www/uliyar/
+            
+            # Setup Backend
             cd /home/prakash/apps/uliyar/server
             npm install --production
             
-            # 3. Secure Restart (Kill exactly the node process for this app)
-            # Find and kill the process using port 8082 (your backend port)
+            # Precise Restart
+            echo "🔄 Restarting Backend on Port 8082..."
             fuser -k 8082/tcp || true
-            
-            # Start backend
             nohup node index.js > app.log 2>&1 &
             
-            # 4. Final Refresh
+            # Restart Apache
             sudo systemctl restart apache2
             
-            echo "✅ Deployment Successful! Check app.log for any MySQL errors."
+            echo "🚀 Deployment Verified and Complete!"
           EOF
