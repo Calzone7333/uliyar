@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
-import { ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search } from 'lucide-react';
+import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search } from 'lucide-react';
 
 // Components
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -455,10 +455,8 @@ const AdminDashboard = () => {
                             onClick={() => setImageModal({ isOpen: false, src: '' })}
                             className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
                         >
-                            <ShieldAlert size={32} className="rotate-45" /> {/* Using ShieldAlert as close icon proxy if X not imported, but X is usually imported. Let's check imports. X is not imported. I will use ShieldAlert rotated or just add Close button text */}
-                            <div className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </div>
+                            <X size={32} />
+
                         </button>
                         <img
                             src={imageModal.src}
