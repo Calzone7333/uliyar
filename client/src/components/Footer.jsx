@@ -77,7 +77,7 @@ const Footer = () => {
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-slate-500 text-sm">
-                        © 2024 Uliyar Inc. All rights reserved.
+                        © {new Date().getFullYear()} Hado Global Services Pvt Ltd. All rights reserved.
                     </p>
                     <div className="flex gap-8 text-sm text-slate-500">
                         <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
