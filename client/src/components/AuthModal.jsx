@@ -204,7 +204,7 @@ const AuthModal = ({ isOpen, onClose, initialView = 'login', initialRole = 'cand
                                         useOneTap
                                         theme="outline"
                                         shape="pill"
-                                        width="100%"
+                                        width="250"
                                     />
                                 </div>
 
