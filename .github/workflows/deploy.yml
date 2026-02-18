@@ -36,7 +36,7 @@ jobs:
       # 5️⃣ Deploy Backend files (server/)
       - name: Deploy Backend
         run: |
-          rsync -avz --delete --exclude 'node_modules' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
+          rsync -avz --delete --exclude 'node_modules' --exclude 'uploads/' --exclude 'app.log' -e "ssh -p 19919 -o StrictHostKeyChecking=no" \
           server/ \
           prakash@103.181.108.248:/home/prakash/apps/uliyar/server/
 

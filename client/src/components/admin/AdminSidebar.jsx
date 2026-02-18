@@ -21,6 +21,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, pendingCounts, onLogout }) => {
     const databaseNav = [
         { id: 'users_list', label: 'All Users', icon: Users },
         { id: 'companies_list', label: 'All Companies', icon: Building2 },
+        { id: 'job_applications', label: 'Job Applications', icon: FileText },
         { id: 'post_job', label: 'Post Admin Job', icon: PlusCircle },
         { id: 'admin_jobs', label: 'My Admin Jobs', icon: Briefcase },
     ];
