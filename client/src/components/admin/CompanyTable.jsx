@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Building2, MapPin, Trash2, CheckCircle, ExternalLink, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
-const CompanyTable = ({ companies, onDelete }) => {
+const CompanyTable = ({ companies, onDelete, onViewDetails }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
@@ -57,18 +58,23 @@ const CompanyTable = ({ companies, onDelete }) => {
                         {filteredCompanies.length > 0 ? filteredCompanies.map((comp) => (
                             <tr key={comp.id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 overflow-hidden">
+                                    <div
+                                        className="flex items-center gap-3 cursor-pointer group-hover:scale-[1.01] transition-transform"
+                                        onClick={() => onViewDetails(comp)}
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 overflow-hidden relative group-hover:border-blue-300 transition-colors">
                                             {comp.logo_path ? (
-                                                <img src={comp.logo_path} alt="" className="w-full h-full object-cover" />
+                                                <img src={`${API_BASE_URL}${comp.logo_path}`} alt="" className="w-full h-full object-cover" />
                                             ) : <Building2 size={20} />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-slate-800 text-sm">{comp.name}</p>
+                                            <p className="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition-colors">{comp.name}</p>
                                             {comp.website && (
-                                                <a href={comp.website} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                                                    Visit Website <ExternalLink size={10} />
-                                                </a>
+                                                <div onClick={e => e.stopPropagation()} className="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                                                    <a href={comp.website} target="_blank" rel="noreferrer" className="flex items-center gap-1">
+                                                        Visit Website <ExternalLink size={10} />
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

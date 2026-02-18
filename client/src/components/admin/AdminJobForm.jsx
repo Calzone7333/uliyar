@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Briefcase, Building2, MapPin, IndianRupee, AlignLeft, Layers, Loader, PlusCircle, FileText, Phone, Mail, Calendar, Image, Edit3 } from 'lucide-react';
+import { Briefcase, Building2, MapPin, IndianRupee, AlignLeft, Layers, Loader, PlusCircle, FileText, Phone, Mail, Calendar, Image, Edit3, ExternalLink } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 
-const AdminJobForm = ({ onPost, isPosting }) => {
+const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
     const [jobData, setJobData] = useState({
         title: '',
         companyName: '',
@@ -26,6 +27,37 @@ const AdminJobForm = ({ onPost, isPosting }) => {
     const [isOtherCategory, setIsOtherCategory] = useState(false);
     const [isOtherSubCategory, setIsOtherSubCategory] = useState(false);
 
+    // Populate form on Edit
+    React.useEffect(() => {
+        if (initialData) {
+            const isCustomCategory = !Object.keys(JOB_CATEGORIES).includes(initialData.category);
+            const isCustomSubCategory = !((JOB_CATEGORIES[initialData.category] || []).includes(initialData.subCategory));
+
+            setJobData({
+                title: initialData.title || '',
+                companyName: initialData.company || '',
+                category: isCustomCategory ? '' : (initialData.category || ''),
+                subCategory: isCustomSubCategory ? '' : (initialData.subCategory || ''),
+                customCategory: isCustomCategory ? (initialData.category || '') : '',
+                customSubCategory: isCustomSubCategory ? (initialData.subCategory || '') : '',
+                location: initialData.location || '',
+                salary: initialData.salary || '',
+                description: initialData.description || '',
+                requirements: initialData.requirements || '',
+                jobType: initialData.type || 'Full Time',
+                contactPhone: initialData.contactPhone || '',
+                contactEmail: initialData.contactEmail || '',
+                socialMediaDate: initialData.socialMediaDate || '',
+                jobAnnouncedDate: initialData.jobAnnouncedDate || '',
+                socialMediaImage: null,
+                newspaperImage: null
+            });
+
+            setIsOtherCategory(isCustomCategory);
+            setIsOtherSubCategory(isCustomSubCategory);
+        }
+    }, [initialData]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -39,6 +71,7 @@ const AdminJobForm = ({ onPost, isPosting }) => {
         }
 
         onPost(finalData, () => {
+            // Reset form on success
             setJobData({
                 title: '',
                 companyName: '',
@@ -65,6 +98,7 @@ const AdminJobForm = ({ onPost, isPosting }) => {
 
     const categories = Object.keys(JOB_CATEGORIES);
     const subCategories = jobData.category ? (JOB_CATEGORIES[jobData.category] || []) : [];
+    const isEditing = !!initialData;
 
     return (
         <div className="max-w-3xl mx-auto">
@@ -72,12 +106,19 @@ const AdminJobForm = ({ onPost, isPosting }) => {
                 <div>
                     <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
                         <div className="p-2 bg-blue-600 rounded-lg text-white shadow-md shadow-blue-200">
-                            <PlusCircle size={20} />
+                            {isEditing ? <Edit3 size={20} /> : <PlusCircle size={20} />}
                         </div>
-                        Post New Job
+                        {isEditing ? 'Edit Job' : 'Post New Job'}
                     </h2>
-                    <p className="text-slate-500 mt-1 text-sm font-medium ml-[3rem]">Enter job details to publish instantly.</p>
+                    <p className="text-slate-500 mt-1 text-sm font-medium ml-[3rem]">
+                        {isEditing ? 'Update job details below.' : 'Enter job details to publish instantly.'}
+                    </p>
                 </div>
+                {isEditing && (
+                    <button onClick={onCancel} className="text-slate-500 hover:text-slate-700 underline text-sm">
+                        Cancel Edit
+                    </button>
+                )}
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -157,12 +198,12 @@ const AdminJobForm = ({ onPost, isPosting }) => {
 
                                     <div className="col-span-2 grid grid-cols-2 gap-4">
                                         <InputGroup
-                                            label="Social Post Date"
+                                            label="Social Post Date (Optional)"
                                             icon={Calendar}
                                             type="date"
                                             value={jobData.socialMediaDate || ''}
                                             onChange={v => setJobData({ ...jobData, socialMediaDate: v })}
-                                            required={true}
+                                            required={false}
                                         />
                                         <InputGroup
                                             label="Job Announced Date"
@@ -176,16 +217,18 @@ const AdminJobForm = ({ onPost, isPosting }) => {
 
                                     <div className="col-span-2 grid grid-cols-2 gap-4 mt-2">
                                         <FileGroup
-                                            label="Social Media Image"
+                                            label="Social Media Image (Optional)"
                                             onChange={file => setJobData({ ...jobData, socialMediaImage: file })}
                                             accept="image/*"
-                                            required={true}
+                                            required={false}
+                                            existingUrl={initialData?.socialMediaImage}
                                         />
                                         <FileGroup
                                             label="Newspaper Image"
                                             onChange={file => setJobData({ ...jobData, newspaperImage: file })}
                                             accept="image/*"
                                             required={true}
+                                            existingUrl={initialData?.newspaperImage}
                                         />
                                     </div>
                                 </div>
@@ -323,10 +366,15 @@ const AdminJobForm = ({ onPost, isPosting }) => {
     );
 };
 
-const FileGroup = ({ label, onChange, accept, required }) => (
+const FileGroup = ({ label, onChange, accept, required, existingUrl }) => (
     <div>
-        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center gap-1">
-            {label} {required && <span className="text-red-500 text-lg leading-none">*</span>}
+        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center justify-between gap-1">
+            <span>{label} {required && !existingUrl && <span className="text-red-500 text-lg leading-none">*</span>}</span>
+            {existingUrl && (
+                <a href={`${API_BASE_URL}${existingUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-[10px] flex items-center gap-1 normal-case font-normal bg-blue-50 px-2 py-0.5 rounded-md">
+                    View Current <ExternalLink size={10} />
+                </a>
+            )}
         </label>
         <div className="relative">
             <Image className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -334,10 +382,11 @@ const FileGroup = ({ label, onChange, accept, required }) => (
                 type="file"
                 accept={accept}
                 onChange={(e) => onChange(e.target.files[0])}
-                required={required}
-                className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-xs text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer bg-white"
+                required={required && !existingUrl}
+                className={`w-full pl-10 pr-3 py-2 rounded-xl border ${existingUrl ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-white'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-xs text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer`}
             />
         </div>
+        {existingUrl && <p className="text-[10px] text-slate-400 mt-1 ml-1">Upload new file to replace existing image.</p>}
     </div>
 );
 

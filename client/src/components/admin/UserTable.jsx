@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, MoreVertical, Trash2, CheckCircle, XCircle, AlertCircle, Shield } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const UserTable = ({ users, onDelete, onRoleChange }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -60,7 +61,7 @@ const UserTable = ({ users, onDelete, onRoleChange }) => {
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold overflow-hidden shadow-sm border border-white">
                                             {user.profile_photo_path ? (
-                                                <img src={user.profile_photo_path} alt="" className="w-full h-full object-cover" />
+                                                <img src={`${API_BASE_URL}${user.profile_photo_path}`} alt="" className="w-full h-full object-cover" />
                                             ) : user.name.charAt(0)}
                                         </div>
                                         <div>

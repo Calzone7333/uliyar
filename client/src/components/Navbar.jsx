@@ -18,15 +18,23 @@ const Navbar = () => {
     };
 
     const handlePostJobClick = () => {
-        if (user?.role === 'employer') {
+        if (!user) {
+            openLogin('employer');
+            return;
+        }
+
+        if (user.role === 'admin') {
+            navigate('/admin', { state: { activeTab: 'post_job' } });
+        } else if (user.role === 'employer') {
             navigate('/employer-dashboard', { state: { openPostModal: true } });
         } else {
-            openLogin('employer');
+            // Worker / Candidate
+            alert("Please login to an Employer account to post jobs.");
         }
     };
 
     return (
-        <nav className="bg-primary border-b border-white/10 sticky top-0 z-50">
+        <nav className="bg-primary border-b border-white/10 sticky top-0 z-[100]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20 items-center">
                     <div className="flex items-center">

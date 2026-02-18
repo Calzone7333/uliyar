@@ -14,13 +14,13 @@ const Footer = () => {
                                 <img src={logo} alt="Uliyar Logo" className="w-full h-full object-contain" />
                             </div>
                         </div>
-                        <p className="text-slate-400 mb-8 leading-relaxed">
+                        <p className="text-white mb-8 leading-relaxed">
                             Connecting skilled workers with the best opportunities across India.
                             The most trusted platform for blue-collar jobs.
                         </p>
                         <div className="flex gap-4">
                             {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-                                <a key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-colors">
+                                <a key={i} href="#" className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary-dark transition-colors shadow-lg shadow-primary/20">
                                     <Icon size={18} className="text-white" />
                                 </a>
                             ))}
@@ -29,11 +29,14 @@ const Footer = () => {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 className="text-lg font-bold mb-6">Quick Links</h4>
+                        <h4 className="text-lg font-bold mb-6 relative inline-block">
+                            Quick Links
+                            <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary rounded-full"></span>
+                        </h4>
                         <ul className="space-y-4">
                             {['Find Jobs', 'Post a Job', 'About Us', 'Contact Us'].map((link) => (
                                 <li key={link}>
-                                    <a href="#" className="text-slate-400 hover:text-primary transition-colors hover:translate-x-1 inline-block">
+                                    <a href="#" className="text-white hover:text-primary transition-colors hover:translate-x-1 inline-block">
                                         {link}
                                     </a>
                                 </li>
@@ -43,11 +46,14 @@ const Footer = () => {
 
                     {/* Services */}
                     <div>
-                        <h4 className="text-lg font-bold mb-6">Services</h4>
+                        <h4 className="text-lg font-bold mb-6 relative inline-block">
+                            Services
+                            <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary rounded-full"></span>
+                        </h4>
                         <ul className="space-y-4">
                             {['Worker Registration', 'Employer Verify', 'Skill Assessments', 'Premium Plans'].map((link) => (
                                 <li key={link}>
-                                    <a href="#" className="text-slate-400 hover:text-primary transition-colors hover:translate-x-1 inline-block">
+                                    <a href="#" className="text-white hover:text-primary transition-colors hover:translate-x-1 inline-block">
                                         {link}
                                     </a>
                                 </li>
@@ -57,17 +63,20 @@ const Footer = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h4 className="text-lg font-bold mb-6">Contact Us</h4>
+                        <h4 className="text-lg font-bold mb-6 relative inline-block">
+                            Contact Us
+                            <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary rounded-full"></span>
+                        </h4>
                         <div className="space-y-4">
-                            <div className="flex items-start gap-4 text-slate-400">
+                            <div className="flex items-start gap-4 text-white">
                                 <MapPin className="w-5 h-5 shrink-0 mt-1 text-primary" />
                                 <p>3/32, 1st Main Road, Ayyappa Nagar, Virugambakkam, Chennai-600092</p>
                             </div>
-                            <div className="flex items-center gap-4 text-slate-400">
+                            <div className="flex items-center gap-4 text-white">
                                 <Phone className="w-5 h-5 shrink-0 text-primary" />
                                 <p>+91 96557 71091</p>
                             </div>
-                            <div className="flex items-center gap-4 text-slate-400">
+                            <div className="flex items-center gap-4 text-white">
                                 <Mail className="w-5 h-5 shrink-0 text-primary" />
                                 <p>info@uliyar.com</p>
                             </div>
@@ -76,10 +85,10 @@ const Footer = () => {
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-slate-500 text-sm">
+                    <p className="text-white/70 text-sm">
                         © {new Date().getFullYear()} Hado Global Services Pvt Ltd. All rights reserved.
                     </p>
-                    <div className="flex gap-8 text-sm text-slate-500">
+                    <div className="flex gap-8 text-sm text-white/70">
                         <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
                         <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
                     </div>

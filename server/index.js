@@ -63,8 +63,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'hado',
-    password: 'Hadoglobal@123',
+    user: 'root',
+    password: 'root',
     database: 'uliyar_db',
     waitForConnections: true,
     connectionLimit: 10,
@@ -583,26 +583,62 @@ app.post('/api/admin/verify-job', (req, res) => {
 // ESSENTIAL SHARED ENDPOINTS
 // ----------------------------------------------------
 
-// Apply (Strict Check)
-app.post('/api/apply', upload.fields([{ name: 'resume', maxCount: 1 }]), (req, res) => {
-    const { jobId, jobTitle, name, email, phone, applicantId } = req.body;
-    if (applicantId) {
-        db.get("SELECT account_status, profile_status, resume_path, resume_status FROM users WHERE id = ?", [applicantId], (err, user) => {
-            // Strict Resume Check
-            if (user.resume_status !== 'APPROVED') return res.status(403).json({ message: "Your resume is not approved by Admin yet." });
+// Apply (Comprehensive Blue Collar Support)
+app.post('/api/apply', upload.fields([
+    { name: 'resume', maxCount: 1 },
+    { name: 'aadhaar', maxCount: 1 },
+    { name: 'drivingLicense', maxCount: 1 },
+    { name: 'photo', maxCount: 1 }
+]), (req, res) => {
+    const {
+        jobId, jobTitle, name, email, mobile, applicantId,
+        altMobile, dob, gender,
+        experienceType, totalExperience, previousCompany, currentSalary, expectedSalary,
+        skillType, licenseType, certification,
+        currentLocation, willingToRelocate
+    } = req.body;
 
-            let finalResumePath = req.files['resume'] ? `/uploads/${req.files['resume'][0].filename}` : user.resume_path;
+    const files = req.files || {};
 
-            db.get("SELECT id FROM applications WHERE jobId = ? AND applicantId = ?", [jobId, applicantId], (err, row) => {
-                if (row) return res.status(400).json({ message: "Already applied" });
+    // Helper to get path
+    const getPath = (fieldName) => files[fieldName] ? `/uploads/${files[fieldName][0].filename}` : null;
 
-                db.run(`INSERT INTO applications (jobId, jobTitle, name, email, phone, resumePath, applicantId, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Applied')`,
-                    [jobId, jobTitle, name, email, phone, finalResumePath, applicantId || null], (err) => res.status(201).json({ message: "Success" }));
-            });
+    const resumePath = getPath('resume');
+    const aadhaarPath = getPath('aadhaar');
+    const drivingLicensePath = getPath('drivingLicense');
+    const photoPath = getPath('photo');
+
+    // Consolidate extra details into profileData JSON
+    const profileData = JSON.stringify({
+        altMobile, dob, gender,
+        experienceType, totalExperience, previousCompany, currentSalary, expectedSalary,
+        skillType, licenseType, certification,
+        currentLocation, willingToRelocate,
+        aadhaarPath, drivingLicensePath, photoPath
+    });
+
+    // If applicantId is provided, we can optionally fetch user to fall back on profile resume
+    // But for this flow, we prioritize the form data.
+
+    // Check if already applied
+    db.get("SELECT id FROM applications WHERE jobId = ? AND applicantId = ?", [jobId, applicantId || 0], (err, row) => {
+        if (row) return res.status(400).json({ message: "You have already applied for this job." });
+
+        // Insert into DB
+        // Mapping 'mobile' from body to 'phone' column in DB
+        const sql = `INSERT INTO applications (jobId, jobTitle, name, email, phone, resumePath, applicantId, profileData, status, appliedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Applied', CURRENT_TIMESTAMP)`;
+
+        // Use provided resumePath or empty string if not provided (Blue collar might not have one)
+        const finalResumePath = resumePath || '';
+
+        db.run(sql, [jobId, jobTitle, name, email, mobile, finalResumePath, applicantId || 0, profileData], function (err) {
+            if (err) {
+                console.error("Application Error:", err);
+                return res.status(500).json({ message: "Failed to submit application" });
+            }
+            res.status(201).json({ success: true, message: "Application submitted successfully" });
         });
-    } else {
-        res.status(403).json({ message: "Login required" });
-    }
+    });
 });
 
 app.get('/api/jobs', (req, res) => {
@@ -638,11 +674,66 @@ app.get('/api/jobs', (req, res) => {
         params.push(type);
     }
 
-    sql += " ORDER BY id DESC";
+    if (type && type !== 'All Types') {
+        sql += " AND type = ?";
+        params.push(type);
+    }
+
+    // Sorting Logic
+    const { sortBy } = req.query;
+    if (sortBy === 'Oldest') {
+        sql += " ORDER BY id ASC";
+    } else if (sortBy === 'SalaryHigh') {
+        // Try to sort by salary number. Casting generic VARCHAR might be tricky, 
+        // but 'CAST(salary AS UNSIGNED)' usually picks the first number it finds.
+        sql += " ORDER BY CAST(salary AS UNSIGNED) DESC";
+    } else if (sortBy === 'SalaryLow') {
+        sql += " ORDER BY CAST(salary AS UNSIGNED) ASC";
+    } else {
+        // Default: Newest
+        sql += " ORDER BY id DESC";
+    }
+
     db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const jobs = (rows || []).map(job => ({ ...job, tags: job.tags ? JSON.parse(job.tags) : [] }));
         res.json(jobs);
+    });
+});
+
+// New Endpoint for Filter Counts
+app.get('/api/jobs-filter-counts', (req, res) => {
+    const sql = "SELECT type, experience FROM jobs WHERE status = 'OPEN'";
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const typeCounts = {};
+        const expCounts = {};
+
+        rows.forEach(row => {
+            // Count Types
+            const t = row.type || 'Other';
+            typeCounts[t] = (typeCounts[t] || 0) + 1;
+
+            // Count Experience (Simple matching for now)
+            // Assuming experience is stored like '0-1 Years', '2-5 Years' etc or 'Fresher'
+            // We'll map them to our categories
+            const exp = (row.experience || '').toLowerCase();
+            let key = 'Other';
+            if (exp.includes('0') || exp.includes('fresher') || exp.includes('entry')) key = 'Entry Level';
+            else if (exp.includes('1') || exp.includes('2') || exp.includes('3') || exp.includes('mid')) key = 'Mid Level';
+            else if (exp.includes('4') || exp.includes('5') || exp.includes('senior')) key = 'Senior Level';
+            else if (exp.includes('director') || exp.includes('head')) key = 'Director';
+            else key = 'Mid Level'; // Fallback
+
+            expCounts[key] = (expCounts[key] || 0) + 1;
+        });
+
+        // Format for frontend
+        const jobTypes = Object.keys(typeCounts).map(key => ({ label: key, count: typeCounts[key] }));
+        const experienceLevels = Object.keys(expCounts).map(key => ({ label: key, count: expCounts[key] }));
+
+        res.json({ jobTypes, experienceLevels });
     });
 });
 
@@ -792,6 +883,42 @@ app.post('/api/admin/post-job', upload.fields([
     });
 });
 
+// Update Admin Job
+app.put('/api/admin/jobs/:id', upload.fields([
+    { name: 'socialMediaImage', maxCount: 1 },
+    { name: 'newspaperImage', maxCount: 1 }
+]), (req, res) => {
+    const jobId = req.params.id;
+    const { title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate } = req.body;
+
+    const files = req.files || {};
+
+    // We need to build the query dynamically based on whether files are uploaded
+    let sql = "UPDATE jobs SET title=?, company=?, category=?, subCategory=?, location=?, salary=?, description=?, type=?, contactPhone=?, contactEmail=?, socialMediaDate=?, jobAnnouncedDate=?";
+    let params = [title, companyName, category, subCategory, location, salary, description, jobType, contactPhone, contactEmail, socialMediaDate, jobAnnouncedDate];
+
+    if (files['socialMediaImage']) {
+        sql += ", socialMediaImage=?";
+        params.push(`/uploads/${files['socialMediaImage'][0].filename}`);
+    }
+
+    if (files['newspaperImage']) {
+        sql += ", newspaperImage=?";
+        params.push(`/uploads/${files['newspaperImage'][0].filename}`);
+    }
+
+    sql += " WHERE id=?";
+    params.push(jobId);
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            console.error("Admin job update error:", err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        res.json({ success: true });
+    });
+});
+
 app.get('/api/job-applications/:jobId', (req, res) => { db.all("SELECT * FROM applications WHERE jobId = ?", [req.params.jobId], (err, rows) => res.json(rows)); });
 app.get('/api/my-applications', (req, res) => { db.all(`SELECT a.*, j.company, j.location from applications a LEFT JOIN jobs j ON a.jobId = j.id WHERE a.applicantId = ?`, [req.query.applicantId], (err, rows) => res.json(rows)); });
 app.patch('/api/applications/:id/status', (req, res) => { db.run("UPDATE applications SET status = ? WHERE id = ?", [req.body.status, req.params.id], (err) => res.json({ success: true })); });
@@ -836,6 +963,49 @@ app.delete('/api/admin/companies/:id', (req, res) => {
         db.run("DELETE FROM jobs WHERE companyId = ?", [id]);
         db.run("UPDATE users SET company_id = NULL WHERE company_id = ?", [id]);
         res.json({ success: true });
+    });
+});
+
+// Get Applications for Admin Jobs (employerId = 0)
+app.get('/api/admin/job-applications', (req, res) => {
+    const sql = `
+        SELECT a.*, j.title as jobTitle, j.location as jobLocation 
+        FROM applications a 
+        JOIN jobs j ON a.jobId = j.id 
+        WHERE j.employerId = 0 
+        ORDER BY a.appliedAt DESC
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// Get Full Company Data (Jobs + Applications) for Admin View
+app.get('/api/admin/company/:id/full-data', (req, res) => {
+    const companyId = req.params.id;
+    const response = { jobs: [], applications: [] };
+
+    db.serialize(() => {
+        // 1. Get Jobs
+        db.all("SELECT * FROM jobs WHERE companyId = ? ORDER BY id DESC", [companyId], (err, jobs) => {
+            if (err) return res.status(500).json({ error: err.message });
+            response.jobs = jobs;
+
+            if (jobs.length === 0) {
+                return res.json(response);
+            }
+
+            // 2. Get Applications for these jobs
+            const jobIds = jobs.map(j => j.id).join(',');
+            const sqlApps = `SELECT a.*, j.title as jobTitle FROM applications a JOIN jobs j ON a.jobId = j.id WHERE a.jobId IN (${jobIds}) ORDER BY a.appliedAt DESC`;
+
+            db.all(sqlApps, [], (err, apps) => {
+                if (err) return res.status(500).json({ error: err.message });
+                response.applications = apps;
+                res.json(response);
+            });
+        });
     });
 });
 
