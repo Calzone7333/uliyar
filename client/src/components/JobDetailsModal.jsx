@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, MapPin, Briefcase, Calendar, Building2, IndianRupee, Clock, CheckCircle2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+
 
 const JobDetailsModal = ({ job, onClose, onApply }) => {
     if (!job) return null;
@@ -93,7 +93,7 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Posted</div>
                             <div className="text-sm font-bold text-slate-700 flex items-center gap-1">
                                 <Calendar size={14} className="text-primary" />
-                                {job.createdAt ? formatDistanceToNow(new Date(job.createdAt), { addSuffix: true }) : 'Recently'}
+                                {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently'}
                             </div>
                         </div>
                     </div>
