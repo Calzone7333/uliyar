@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     const [viewCompanyDetails, setViewCompanyDetails] = useState(null);
     const [isPosting, setIsPosting] = useState(false);
     const [editJob, setEditJob] = useState(null);
+    const [imageModal, setImageModal] = useState({ isOpen: false, src: '' });
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -345,15 +346,21 @@ const AdminDashboard = () => {
                                         <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 {job.socialMediaImage ? (
-                                                    <a href={`${API_BASE_URL}${job.socialMediaImage}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-md">
+                                                    <button
+                                                        onClick={() => setImageModal({ isOpen: true, src: `${API_BASE_URL}${job.socialMediaImage}` })}
+                                                        className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-md transition-colors hover:bg-blue-100"
+                                                    >
                                                         <Image size={12} /> Social
-                                                    </a>
+                                                    </button>
                                                 ) : <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1 px-2 py-1"><Image size={12} /> No Social</span>}
 
                                                 {job.newspaperImage ? (
-                                                    <a href={`${API_BASE_URL}${job.newspaperImage}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:underline bg-purple-50 px-2 py-1 rounded-md">
+                                                    <button
+                                                        onClick={() => setImageModal({ isOpen: true, src: `${API_BASE_URL}${job.newspaperImage}` })}
+                                                        className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:underline bg-purple-50 px-2 py-1 rounded-md transition-colors hover:bg-purple-100"
+                                                    >
                                                         <Image size={12} /> Paper
-                                                    </a>
+                                                    </button>
                                                 ) : <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1 px-2 py-1"><Image size={12} /> No Paper</span>}
                                             </div>
                                             <span className={`w-2 h-2 rounded-full ${job.status === 'OPEN' ? 'bg-green-500' : 'bg-slate-300'}`} title={job.status}></span>
@@ -438,6 +445,28 @@ const AdminDashboard = () => {
                     company={viewCompanyDetails}
                     onClose={() => setViewCompanyDetails(null)}
                 />
+            )}
+
+            {/* Simple Image Modal */}
+            {imageModal.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setImageModal({ isOpen: false, src: '' })}>
+                    <div className="relative max-w-4xl max-h-screen p-2" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setImageModal({ isOpen: false, src: '' })}
+                            className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+                        >
+                            <ShieldAlert size={32} className="rotate-45" /> {/* Using ShieldAlert as close icon proxy if X not imported, but X is usually imported. Let's check imports. X is not imported. I will use ShieldAlert rotated or just add Close button text */}
+                            <div className="bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </div>
+                        </button>
+                        <img
+                            src={imageModal.src}
+                            alt="Preview"
+                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-white/10"
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );
