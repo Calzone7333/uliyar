@@ -297,78 +297,86 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredAdminJobs.length > 0 ? filteredAdminJobs.map(job => (
-                                    <div key={job.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all p-5 flex flex-col group relative overflow-hidden">
+                                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col group relative overflow-hidden h-full">
 
                                         {/* Actions Overlay */}
-                                        <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm p-1.5 rounded-xl border border-slate-100 shadow-sm z-10">
-                                            <button onClick={() => startEditJob(job)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Job">
-                                                <Edit3 size={16} />
+                                        <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
+                                            <button onClick={() => startEditJob(job)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors" title="Edit Job">
+                                                <Edit3 size={14} />
                                             </button>
-                                            <div className="w-px h-4 bg-slate-200"></div>
-                                            <button onClick={() => deleteAdminJob(job.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Job">
-                                                <Trash2 size={16} />
+                                            <div className="w-px h-3 bg-slate-200"></div>
+                                            <button onClick={() => deleteAdminJob(job.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete Job">
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
 
                                         {/* Job Header */}
-                                        <div className="mb-5 pr-8">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 mb-4">
-                                                <Briefcase size={24} />
-                                            </div>
-                                            <h4 className="text-lg font-bold text-slate-800 leading-tight mb-1 line-clamp-2" title={job.title}>{job.title}</h4>
-                                            <p className="text-sm font-medium text-slate-500 line-clamp-1">{job.company || 'No Company Name'}</p>
+                                        <div className="mb-3 pr-8">
+                                            <h4 className="text-base font-bold text-slate-800 leading-tight mb-0.5 line-clamp-1" title={job.title}>{job.title}</h4>
+                                            <p className="text-xs font-medium text-slate-500 line-clamp-1">{job.company || 'No Company Name'}</p>
                                         </div>
 
                                         {/* Details Tags */}
-                                        <div className="flex flex-wrap gap-2 mb-6">
-                                            <span className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border border-slate-100">{job.category}</span>
-                                            {job.type && <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-100">{job.type}</span>}
+                                        <div className="flex flex-wrap gap-1.5 mb-3">
+                                            <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 text-[9px] font-bold uppercase tracking-wider border border-slate-100 line-clamp-1 max-w-full truncate">{job.category}</span>
+                                            {job.type && <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-wider border border-blue-100 whitespace-nowrap">{job.type}</span>}
                                         </div>
 
                                         {/* Info Grid */}
-                                        <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-sm text-slate-500 mb-6">
-                                            <div className="flex items-center gap-2">
-                                                <MapPin size={14} className="text-slate-400 shrink-0" />
+                                        <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-xs text-slate-500 mb-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <MapPin size={12} className="text-slate-400 shrink-0" />
                                                 <span className="truncate" title={job.location}>{job.location}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <IndianRupee size={14} className="text-slate-400 shrink-0" />
+                                            <div className="flex items-center gap-1.5">
+                                                <IndianRupee size={12} className="text-slate-400 shrink-0" />
                                                 <span className="truncate">{job.salary}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 col-span-2">
-                                                <Calendar size={14} className="text-slate-400 shrink-0" />
+                                            <div className="flex items-center gap-1.5 col-span-2">
+                                                <Calendar size={12} className="text-slate-400 shrink-0" />
                                                 <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
                                             </div>
                                         </div>
 
-                                        {/* Footer */}
-                                        <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
+                                        {/* Footer - Images */}
+                                        <div className="mt-auto pt-3 border-t border-slate-50">
+                                            <div className="flex gap-2">
                                                 {job.socialMediaImage ? (
-                                                    <button
-                                                        onClick={() => {
-                                                            setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) });
-                                                        }}
-                                                        className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-md transition-colors hover:bg-blue-100"
+                                                    <div
+                                                        className="relative h-16 w-full rounded-lg overflow-hidden border border-slate-100 cursor-pointer group/img"
+                                                        onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) })}
                                                     >
-                                                        <Image size={12} /> Social
-                                                    </button>
-                                                ) : <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1 px-2 py-1"><Image size={12} /> No Social</span>}
+                                                        <img src={getImgUrl(job.socialMediaImage)} alt="Social" className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
+                                                            <span className="text-[8px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded opacity-0 group-hover/img:opacity-100 transition-opacity backdrop-blur-sm">Social</span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-16 w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-300">
+                                                        <Image size={12} />
+                                                        <span className="text-[8px] font-bold">No Social</span>
+                                                    </div>
+                                                )}
 
                                                 {job.newspaperImage ? (
-                                                    <button
-                                                        onClick={() => {
-                                                            setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) });
-                                                        }}
-                                                        className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:underline bg-purple-50 px-2 py-1 rounded-md transition-colors hover:bg-purple-100"
+                                                    <div
+                                                        className="relative h-16 w-full rounded-lg overflow-hidden border border-slate-100 cursor-pointer group/img"
+                                                        onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) })}
                                                     >
-                                                        <Image size={12} /> Paper
-                                                    </button>
-                                                ) : <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1 px-2 py-1"><Image size={12} /> No Paper</span>}
+                                                        <img src={getImgUrl(job.newspaperImage)} alt="Paper" className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
+                                                            <span className="text-[8px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded opacity-0 group-hover/img:opacity-100 transition-opacity backdrop-blur-sm">Paper</span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-16 w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-300">
+                                                        <Image size={12} />
+                                                        <span className="text-[8px] font-bold">No Paper</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <span className={`w-2 h-2 rounded-full ${job.status === 'OPEN' ? 'bg-green-500' : 'bg-slate-300'}`} title={job.status}></span>
                                         </div>
                                     </div>
                                 )) : (
