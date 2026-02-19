@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-import { Heart, Building2 } from 'lucide-react';
+import { Bookmark, Building2 } from 'lucide-react';
 import ApplyJobModal from './ApplyJobModal';
 import JobDetailsModal from './JobDetailsModal';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
-
-
 
 const JobCard = ({ job, index = 0 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const { user } = useAuth();
     const { openLogin } = useUI();
-
-
 
     const handleApplyClick = (e) => {
         e.stopPropagation();
@@ -33,61 +29,113 @@ const JobCard = ({ job, index = 0 }) => {
         setIsDetailsOpen(true);
     };
 
+    // Helper to format time ago
+    const formatTimeAgo = (dateString) => {
+        if (!dateString) return "Recently";
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return "Just now";
+
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}h ago`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 30) return `${diffInDays}d ago`;
+
+        const diffInMonths = Math.floor(diffInDays / 30);
+        if (diffInMonths < 12) return `${diffInMonths}mo ago`;
+
+        return `${Math.floor(diffInMonths / 12)}y ago`;
+    };
+
+    const applicantsCount = job.applicants ? job.applicants.length : (job.applicationsCount || 0);
+
     return (
         <>
-            <div className={`rounded-[24px] p-6 relative group flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5 bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50`}>
-
-                {/* Header: Logo & Bookmark */}
-                <div className="flex justify-between items-start mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 group-hover:border-primary/20 transition-colors">
-                        {job.logo ? (
-                            <img src={job.logo} alt={job.company} className="w-8 h-8 object-contain" />
-                        ) : (
-                            <Building2 size={24} className="text-slate-300" />
-                        )}
+            <div
+                className="group bg-white rounded-[16px] p-5 border border-slate-100/80 hover:border-[#0D9488]/30 hover:shadow-lg hover:shadow-[#0D9488]/10 transition-all duration-300 flex flex-col h-full relative cursor-pointer"
+                onClick={handleDetailsClick}
+            >
+                {/* Header: Logo, Title, Bookmark */}
+                <div className="flex items-start justify-between mb-3">
+                    <div className="flex gap-3">
+                        <div className="w-10 h-10 flex-shrink-0 bg-white rounded-lg flex items-center justify-center border border-slate-100 p-1 shadow-sm">
+                            {job.logo ? (
+                                <img src={job.logo} alt={job.company} className="w-full h-full object-contain rounded-md" />
+                            ) : (
+                                <Building2 size={20} className="text-slate-700" />
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0 pr-2">
+                            <h3 className="text-[15px] font-bold text-slate-900 leading-snug group-hover:text-[#0D9488] transition-colors mb-0.5 truncate">
+                                {job.title}
+                            </h3>
+                            <p className="text-[12px] font-medium text-slate-500 truncate">
+                                {job.company || "Company"} <span className="text-slate-300 mx-1">•</span> {job.location || "Remote"}
+                            </p>
+                        </div>
                     </div>
-                    <button className="text-slate-300 hover:text-primary transition-colors p-2 hover:bg-primary/5 rounded-xl">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
+                    <button className="text-slate-400 hover:text-[#0D9488] transition-colors p-1 hover:bg-[#F0FDFA] rounded-full -mt-1 -mr-1">
+                        <Bookmark size={18} strokeWidth={1.5} />
                     </button>
                 </div>
 
-                {/* Job Info */}
-                <div className="mb-4">
-                    <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight group-hover:text-primary transition-colors">
-                        {job.title}
-                    </h3>
-                    <p className="text-xs font-medium text-slate-500 line-clamp-3 leading-relaxed">
-                        {job.description || "Build cutting-edge web applications from start to finish, utilizing your expertise in both front-end and back-end technologies."}
-                    </p>
+                {/* Match Text */}
+                <div className="mb-3 pl-[52px] -mt-2">
+                    <span className="text-[11px] font-semibold text-[#0D9488]">
+                        Match with your profile
+                    </span>
                 </div>
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-6 mt-auto">
+                {/* Tags Section */}
+                <div className="flex flex-wrap gap-2 mb-4">
                     {job.type && (
-                        <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-600 border border-slate-100 uppercase tracking-wider">
+                        <span className="bg-[#F0FDFA] text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide border border-transparent group-hover:border-[#0D9488]/10 transition-colors">
                             {job.type}
                         </span>
                     )}
+                    <span className="bg-[#F0FDFA] text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide border border-transparent group-hover:border-[#0D9488]/10 transition-colors">
+                        {job.locationType || "Onsite"}
+                    </span>
                     {(job.level || job.experience) && (
-                        <span className="px-3 py-1.5 bg-blue-50/50 rounded-lg text-[10px] font-bold text-blue-600 border border-blue-100 uppercase tracking-wider">
+                        <span className="bg-[#F0FDFA] text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide border border-transparent group-hover:border-[#0D9488]/10 transition-colors">
                             {job.level || job.experience}
                         </span>
                     )}
                 </div>
 
-                {/* Actions */}
-                <div className="grid grid-cols-2 gap-3 mt-auto">
+                {/* Meta: Time & Applicants */}
+                <div className="mt-auto mb-4 flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                    <span>{formatTimeAgo(job.createdAt || job.postedAt)}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span>{applicantsCount} Applicants</span>
+                </div>
+
+                {/* Footer: Price & Button */}
+                <div className="flex items-center justify-between pt-0 mt-1">
+                    <div className="flex flex-col justify-center">
+                        {job.salary ? (
+                            <div className="flex items-baseline gap-0.5">
+                                <span className="text-[18px] font-bold text-[#0D9488] tracking-tight">
+                                    ₹{(job.salary / 1000)}k
+                                </span>
+                                <span className="text-[12px] font-medium text-slate-400">/m</span>
+                            </div>
+                        ) : (
+                            <span className="text-[13px] font-bold text-slate-400">Not Applicable</span>
+                        )}
+                    </div>
                     <button
-                        onClick={handleDetailsClick}
-                        className="py-3 px-4 rounded-xl border-2 border-slate-100 text-slate-600 text-xs font-bold hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-95"
-                    >
-                        View Details
-                    </button>
-                    <button
-                        onClick={handleApplyClick}
-                        className="py-3 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-primary transition-all shadow-lg shadow-slate-200 active:scale-95 translate-y-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleApplyClick(e);
+                        }}
+                        className="bg-[#F0FDFA] hover:bg-[#0D9488] text-[#0D9488] hover:text-white px-5 py-2 rounded-[10px] text-[12px] font-bold transition-all duration-300 border border-[#0D9488]/20 hover:border-[#0D9488]"
                     >
                         Apply Now
                     </button>

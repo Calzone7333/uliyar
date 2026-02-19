@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -8,9 +8,37 @@ import { useUI } from '../context/UIContext';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const lastScrollY = useRef(0);
+
     const { openLogin, openRegister } = useUI();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Always show navbar at the top
+            if (currentScrollY < 10) {
+                setIsVisible(true);
+                lastScrollY.current = currentScrollY;
+                return;
+            }
+
+            if (currentScrollY > lastScrollY.current) {
+                // Scrolling down -> Hide
+                setIsVisible(false);
+            } else {
+                // Scrolling up -> Show
+                setIsVisible(true);
+            }
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -34,7 +62,7 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="bg-primary border-b border-white/10 sticky top-0 z-[100]">
+        <nav className={`bg-primary border-b border-white/10 sticky top-0 z-[100] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20 items-center">
                     <div className="flex items-center">
