@@ -1,9 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { X, Briefcase, Clock, DollarSign, Calendar, Building2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../config';
+
 
 const JobDetailsModal = ({ job, onClose, onApply }) => {
     const modalRef = useRef();
+
+    const getImageSrc = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) {
+            if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
+                return path.replace(/https?:\/\/(www\.)?uliyar\.com/, API_BASE_URL);
+            }
+            return path;
+        }
+        return `${API_BASE_URL}${encodeURI(path)}`;
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -142,9 +155,9 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                                 {job.socialMediaImage && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-bold text-slate-500">Social Media Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(job.socialMediaImage.startsWith('http') ? (job.socialMediaImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.socialMediaImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.socialMediaImage) : `http://localhost:8082${encodeURI(job.socialMediaImage)}`, '_blank')}>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImageSrc(job.socialMediaImage), '_blank')}>
                                             <img
-                                                src={job.socialMediaImage.startsWith('http') ? (job.socialMediaImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.socialMediaImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.socialMediaImage) : `http://localhost:8082${encodeURI(job.socialMediaImage)}`}
+                                                src={getImageSrc(job.socialMediaImage)}
                                                 alt="Social Media Ad"
                                                 className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
                                             />
@@ -154,9 +167,9 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                                 {job.newspaperImage && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-bold text-slate-500">Newspaper Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(job.newspaperImage.startsWith('http') ? (job.newspaperImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.newspaperImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.newspaperImage) : `http://localhost:8082${encodeURI(job.newspaperImage)}`, '_blank')}>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImageSrc(job.newspaperImage), '_blank')}>
                                             <img
-                                                src={job.newspaperImage.startsWith('http') ? (job.newspaperImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.newspaperImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.newspaperImage) : `http://localhost:8082${encodeURI(job.newspaperImage)}`}
+                                                src={getImageSrc(job.newspaperImage)}
                                                 alt="Newspaper Ad"
                                                 className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
                                             />

@@ -67,8 +67,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'hado',
-    password: 'Hadoglobal@123',
+    user: 'root',
+    password: 'root',
     database: 'uliyar_db',
     waitForConnections: true,
     connectionLimit: 10,

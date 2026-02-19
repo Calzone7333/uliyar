@@ -356,7 +356,7 @@ const AdminDashboard = () => {
                                                                     }
                                                                     return path;
                                                                 }
-                                                                return `http://localhost:8082${encodeURI(path)}`;
+                                                                return `${API_BASE_URL}${encodeURI(path)}`;
                                                             };
                                                             setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) });
                                                         }}
@@ -377,7 +377,7 @@ const AdminDashboard = () => {
                                                                     }
                                                                     return path;
                                                                 }
-                                                                return `http://localhost:8082${encodeURI(path)}`;
+                                                                return `${API_BASE_URL}${encodeURI(path)}`;
                                                             };
                                                             setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) });
                                                         }}
