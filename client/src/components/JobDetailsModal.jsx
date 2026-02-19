@@ -10,9 +10,6 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
     const getImageSrc = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) {
-            if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
-                return path.replace(/https?:\/\/(www\.)?uliyar\.com/, API_BASE_URL);
-            }
             return path;
         }
         return `${API_BASE_URL}${encodeURI(path)}`;

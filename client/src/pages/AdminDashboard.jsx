@@ -351,9 +351,6 @@ const AdminDashboard = () => {
                                                             const getImgUrl = (path) => {
                                                                 if (!path) return "";
                                                                 if (path.startsWith('http')) {
-                                                                    if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
-                                                                        return path.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082');
-                                                                    }
                                                                     return path;
                                                                 }
                                                                 return `${API_BASE_URL}${encodeURI(path)}`;
@@ -372,9 +369,6 @@ const AdminDashboard = () => {
                                                             const getImgUrl = (path) => {
                                                                 if (!path) return "";
                                                                 if (path.startsWith('http')) {
-                                                                    if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
-                                                                        return path.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082');
-                                                                    }
                                                                     return path;
                                                                 }
                                                                 return `${API_BASE_URL}${encodeURI(path)}`;
