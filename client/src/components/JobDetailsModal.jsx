@@ -134,6 +134,39 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                         </div>
                     </div>
 
+                    {/* Job Attachments */}
+                    {(job.socialMediaImage || job.newspaperImage) && (
+                        <div className="mt-8 px-8 pb-4">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Job Attachments</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {job.socialMediaImage && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-sm font-bold text-slate-500">Social Media Ad</h4>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(job.socialMediaImage.startsWith('http') ? (job.socialMediaImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.socialMediaImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.socialMediaImage) : `http://localhost:8082${encodeURI(job.socialMediaImage)}`, '_blank')}>
+                                            <img
+                                                src={job.socialMediaImage.startsWith('http') ? (job.socialMediaImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.socialMediaImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.socialMediaImage) : `http://localhost:8082${encodeURI(job.socialMediaImage)}`}
+                                                alt="Social Media Ad"
+                                                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {job.newspaperImage && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-sm font-bold text-slate-500">Newspaper Ad</h4>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(job.newspaperImage.startsWith('http') ? (job.newspaperImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.newspaperImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.newspaperImage) : `http://localhost:8082${encodeURI(job.newspaperImage)}`, '_blank')}>
+                                            <img
+                                                src={job.newspaperImage.startsWith('http') ? (job.newspaperImage.includes('uliyar.com') && window.location.hostname === 'localhost' ? job.newspaperImage.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082') : job.newspaperImage) : `http://localhost:8082${encodeURI(job.newspaperImage)}`}
+                                                alt="Newspaper Ad"
+                                                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Footer Actions */}
                     <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-white rounded-b-[24px] sticky bottom-0 z-10">
                         <button
