@@ -56,6 +56,10 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 app.get('/api/auth/google-client-id', (req, res) => {
     res.json({ clientId: GOOGLE_CLIENT_ID });
 });
