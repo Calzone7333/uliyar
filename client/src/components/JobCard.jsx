@@ -72,7 +72,7 @@ const JobCard = ({ job, index = 0 }) => {
                             )}
                         </div>
                         <div className="flex-1 min-w-0 pr-2">
-                            <h3 className="text-[15px] font-bold text-slate-900 leading-snug group-hover:text-[#0D9488] transition-colors mb-0.5 truncate">
+                            <h3 className="text-[15px] font-bold text-slate-900 leading-snug group-hover:text-[#0D9488] transition-colors mb-0.5 break-words">
                                 {job.title}
                             </h3>
                             <p className="text-[12px] font-medium text-slate-500 truncate">
@@ -122,9 +122,9 @@ const JobCard = ({ job, index = 0 }) => {
                         {job.salary ? (
                             <div className="flex items-baseline gap-0.5">
                                 <span className="text-[18px] font-bold text-[#0D9488] tracking-tight">
-                                    ₹{(job.salary / 1000)}k
+                                    {!isNaN(job.salary) ? `₹${(job.salary / 1000)}k` : job.salary}
                                 </span>
-                                <span className="text-[12px] font-medium text-slate-400">/m</span>
+                                {!isNaN(job.salary) && <span className="text-[12px] font-medium text-slate-400">/m</span>}
                             </div>
                         ) : (
                             <span className="text-[13px] font-bold text-slate-400">Not Applicable</span>
