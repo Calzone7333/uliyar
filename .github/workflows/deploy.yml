@@ -61,11 +61,11 @@ jobs:
             npm install --production
 
             # 3. Restart Backend
-            pkill -f 'node index.js' || true
-            nohup node index.js > /home/prakash/apps/uliyar/server/app.log 2>&1 &
-            
-            # 4. Restart Apache (Ensure NOPASSWD is set on server for this command)
-            sudo systemctl restart apache2
+            pm2 restart uliyar-api || pm2 start index.js --name uliyar-api
+            pm2 save
+
+            # 4. Reload Apache (Optional)
+            sudo systemctl reload apache2 || true
             
             echo "Deployment Complete!"
           EOF
