@@ -222,6 +222,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                             accept="image/*"
                                             required={false}
                                             existingUrl={initialData?.socialMediaImage}
+                                            selectedFile={jobData.socialMediaImage}
                                         />
                                         <FileGroup
                                             label="Newspaper Image"
@@ -229,6 +230,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                             accept="image/*"
                                             required={true}
                                             existingUrl={initialData?.newspaperImage}
+                                            selectedFile={jobData.newspaperImage}
                                         />
                                     </div>
                                 </div>
@@ -366,29 +368,67 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
     );
 };
 
-const FileGroup = ({ label, onChange, accept, required, existingUrl }) => (
-    <div>
-        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center justify-between gap-1">
-            <span>{label} {required && !existingUrl && <span className="text-red-500 text-lg leading-none">*</span>}</span>
-            {existingUrl && (
-                <a href={`${API_BASE_URL}${existingUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-[10px] flex items-center gap-1 normal-case font-normal bg-blue-50 px-2 py-0.5 rounded-md">
-                    View Current <ExternalLink size={10} />
-                </a>
+const FileGroup = ({ label, onChange, accept, required, existingUrl, selectedFile }) => {
+    const [preview, setPreview] = React.useState(null);
+    const fileInputRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (!selectedFile) {
+            setPreview(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setPreview(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [selectedFile]);
+
+    const getExistingUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return `${API_BASE_URL}${encodeURI(path)}`;
+    };
+
+    return (
+        <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center justify-between gap-1">
+                <span>{label} {required && !existingUrl && <span className="text-red-500 text-lg leading-none">*</span>}</span>
+                {existingUrl && (
+                    <a href={getExistingUrl(existingUrl)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-[10px] flex items-center gap-1 normal-case font-normal bg-blue-50 px-2 py-0.5 rounded-md">
+                        View Current <ExternalLink size={10} />
+                    </a>
+                )}
+            </label>
+            <div className="relative">
+                <Image className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={accept}
+                    onChange={(e) => onChange(e.target.files[0])}
+                    required={required && !existingUrl}
+                    className={`w-full pl-10 pr-3 py-2 rounded-xl border ${existingUrl ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-white'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-xs text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer`}
+                />
+            </div>
+            {preview && (
+                <div className="mt-2 relative w-full h-32 bg-slate-50 rounded-xl overflow-hidden border border-slate-200 group">
+                    <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+                    <button
+                        type="button"
+                        onClick={() => onChange(null)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        title="Remove Image"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
             )}
-        </label>
-        <div className="relative">
-            <Image className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-                type="file"
-                accept={accept}
-                onChange={(e) => onChange(e.target.files[0])}
-                required={required && !existingUrl}
-                className={`w-full pl-10 pr-3 py-2 rounded-xl border ${existingUrl ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-white'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-xs text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer`}
-            />
+            {existingUrl && !preview && <p className="text-[10px] text-slate-400 mt-1 ml-1">Upload new file to replace existing image.</p>}
         </div>
-        {existingUrl && <p className="text-[10px] text-slate-400 mt-1 ml-1">Upload new file to replace existing image.</p>}
-    </div>
-);
+    );
+};
 
 const InputGroup = ({ label, icon: Icon, value, onChange, placeholder, type = "text", required }) => (
     <div>

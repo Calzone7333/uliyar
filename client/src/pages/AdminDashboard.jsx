@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, getImgUrl } from '../config';
+
 import { useAuth } from '../context/AuthContext';
 import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search } from 'lucide-react';
 
@@ -348,13 +349,6 @@ const AdminDashboard = () => {
                                                 {job.socialMediaImage ? (
                                                     <button
                                                         onClick={() => {
-                                                            const getImgUrl = (path) => {
-                                                                if (!path) return "";
-                                                                if (path.startsWith('http')) {
-                                                                    return path;
-                                                                }
-                                                                return `${API_BASE_URL}${encodeURI(path)}`;
-                                                            };
                                                             setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) });
                                                         }}
                                                         className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-md transition-colors hover:bg-blue-100"
@@ -366,13 +360,6 @@ const AdminDashboard = () => {
                                                 {job.newspaperImage ? (
                                                     <button
                                                         onClick={() => {
-                                                            const getImgUrl = (path) => {
-                                                                if (!path) return "";
-                                                                if (path.startsWith('http')) {
-                                                                    return path;
-                                                                }
-                                                                return `${API_BASE_URL}${encodeURI(path)}`;
-                                                            };
                                                             setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) });
                                                         }}
                                                         className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:underline bg-purple-50 px-2 py-1 rounded-md transition-colors hover:bg-purple-100"

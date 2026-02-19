@@ -1,19 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { X, Briefcase, Clock, DollarSign, Calendar, Building2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, getImgUrl } from '../config';
 
 
 const JobDetailsModal = ({ job, onClose, onApply }) => {
     const modalRef = useRef();
-
-    const getImageSrc = (path) => {
-        if (!path) return '';
-        if (path.startsWith('http')) {
-            return path;
-        }
-        return `${API_BASE_URL}${encodeURI(path)}`;
-    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -152,9 +144,9 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                                 {job.socialMediaImage && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-bold text-slate-500">Social Media Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImageSrc(job.socialMediaImage), '_blank')}>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImgUrl(job.socialMediaImage), '_blank')}>
                                             <img
-                                                src={getImageSrc(job.socialMediaImage)}
+                                                src={getImgUrl(job.socialMediaImage)}
                                                 alt="Social Media Ad"
                                                 className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
                                             />
@@ -164,9 +156,9 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                                 {job.newspaperImage && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-bold text-slate-500">Newspaper Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImageSrc(job.newspaperImage), '_blank')}>
+                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImgUrl(job.newspaperImage), '_blank')}>
                                             <img
-                                                src={getImageSrc(job.newspaperImage)}
+                                                src={getImgUrl(job.newspaperImage)}
                                                 alt="Newspaper Ad"
                                                 className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
                                             />
