@@ -6,16 +6,35 @@ export const API_BASE_URL = isProduction
 // Helper to get image URL
 export const getImgUrl = (path) => {
     if (!path) return '';
-    // If it's a full URL from our system (contains /uploads/), strip domain and use current API_BASE_URL
-    if (path.includes('/uploads/')) {
-        const relativePath = path.substring(path.lastIndexOf('/uploads/'));
-        return `${API_BASE_URL}${encodeURI(relativePath)}`;
-    }
-    // External URL
-    if (path.startsWith('http')) return path;
 
-    // Relative path - assume it's an upload
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    // Normalize path: replace backslashes and ensure logical correctness
+    let cleanPath = path.replace(/\\/g, '/');
+
+    // If it's a full URL
+    if (cleanPath.startsWith('http')) {
+        // If it's our own domain, strip it to handle protocol changes or port changes
+        if (cleanPath.includes(window.location.hostname)) {
+            try {
+                const urlObj = new URL(cleanPath);
+                cleanPath = urlObj.pathname;
+            } catch (e) {
+                // Fallback
+            }
+        } else {
+            return cleanPath;
+        }
+    }
+
+    // Ensure it starts with /
+    if (!cleanPath.startsWith('/')) {
+        cleanPath = '/' + cleanPath;
+    }
+
+    // If it's an upload path, route it through /api/uploads to ensure it works via proxy
+    if (cleanPath.startsWith('/uploads/')) {
+        return `${API_BASE_URL}/api${encodeURI(cleanPath)}`;
+    }
+
+    // Fallback for other paths
     return `${API_BASE_URL}${encodeURI(cleanPath)}`;
-};
 
