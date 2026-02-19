@@ -347,7 +347,19 @@ const AdminDashboard = () => {
                                             <div className="flex items-center gap-3">
                                                 {job.socialMediaImage ? (
                                                     <button
-                                                        onClick={() => setImageModal({ isOpen: true, src: `${API_BASE_URL}${job.socialMediaImage}` })}
+                                                        onClick={() => {
+                                                            const getImgUrl = (path) => {
+                                                                if (!path) return "";
+                                                                if (path.startsWith('http')) {
+                                                                    if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
+                                                                        return path.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082');
+                                                                    }
+                                                                    return path;
+                                                                }
+                                                                return `http://localhost:8082${path}`;
+                                                            };
+                                                            setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) });
+                                                        }}
                                                         className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-md transition-colors hover:bg-blue-100"
                                                     >
                                                         <Image size={12} /> Social
@@ -356,7 +368,19 @@ const AdminDashboard = () => {
 
                                                 {job.newspaperImage ? (
                                                     <button
-                                                        onClick={() => setImageModal({ isOpen: true, src: `${API_BASE_URL}${job.newspaperImage}` })}
+                                                        onClick={() => {
+                                                            const getImgUrl = (path) => {
+                                                                if (!path) return "";
+                                                                if (path.startsWith('http')) {
+                                                                    if (path.includes('uliyar.com') && window.location.hostname === 'localhost') {
+                                                                        return path.replace(/https?:\/\/(www\.)?uliyar\.com/, 'http://localhost:8082');
+                                                                    }
+                                                                    return path;
+                                                                }
+                                                                return `http://localhost:8082${path}`;
+                                                            };
+                                                            setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) });
+                                                        }}
                                                         className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:underline bg-purple-50 px-2 py-1 rounded-md transition-colors hover:bg-purple-100"
                                                     >
                                                         <Image size={12} /> Paper
