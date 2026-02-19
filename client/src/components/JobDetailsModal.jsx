@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, Briefcase, Clock, DollarSign, Calendar, Building2, MapPin } from 'lucide-react';
+import { X, Briefcase, Clock, IndianRupee, Calendar, Building2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL, getImgUrl } from '../config';
 
@@ -92,7 +92,7 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                             <div className="bg-[#F8FAFC] p-4 rounded-xl border border-slate-50">
                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Salary</div>
                                 <div className="flex items-center gap-2 font-bold text-slate-700 text-sm">
-                                    <DollarSign size={16} className="text-[#0D9488]" />
+                                    <IndianRupee size={16} className="text-[#0D9488]" />
                                     {job.salary ? `₹${(job.salary / 1000)}k` : "Not Disclosed"}
                                 </div>
                             </div>
@@ -135,39 +135,6 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Job Attachments */}
-                    {(job.socialMediaImage || job.newspaperImage) && (
-                        <div className="mt-8 px-8 pb-4">
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Job Attachments</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {job.socialMediaImage && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-bold text-slate-500">Social Media Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImgUrl(job.socialMediaImage), '_blank')}>
-                                            <img
-                                                src={getImgUrl(job.socialMediaImage)}
-                                                alt="Social Media Ad"
-                                                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                                {job.newspaperImage && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-bold text-slate-500">Newspaper Ad</h4>
-                                        <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative group cursor-pointer" onClick={() => window.open(getImgUrl(job.newspaperImage), '_blank')}>
-                                            <img
-                                                src={getImgUrl(job.newspaperImage)}
-                                                alt="Newspaper Ad"
-                                                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Footer Actions */}
                     <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-white rounded-b-[24px] sticky bottom-0 z-10">

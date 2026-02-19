@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building2, MapPin, DollarSign, AlignLeft, Calendar, UserCheck, CheckCircle, XCircle, FileText, Phone, Mail } from 'lucide-react';
+import { X, Building2, MapPin, IndianRupee, AlignLeft, Calendar, UserCheck, CheckCircle, XCircle, FileText, Phone, Mail } from 'lucide-react';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 
 const JobModal = ({ job, onClose, onAction }) => {
@@ -32,7 +32,7 @@ const JobModal = ({ job, onClose, onAction }) => {
                         {/* ... Existing Grid Items ... */}
                         <div className="bg-blue-50 p-4 rounded-2xl flex items-center gap-4 border border-blue-100">
                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
-                                <DollarSign size={20} />
+                                <IndianRupee size={20} />
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Salary</p>
