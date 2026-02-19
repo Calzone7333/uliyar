@@ -37,4 +37,4 @@ export const getImgUrl = (path) => {
 
     // Fallback for other paths
     return `${API_BASE_URL}${encodeURI(cleanPath)}`;
-
+};
