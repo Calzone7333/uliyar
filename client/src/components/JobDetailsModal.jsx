@@ -89,13 +89,13 @@ const JobDetailsModal = ({ job, onClose, onApply }) => {
                                     {job.type || "Full Time"}
                                 </div>
                             </div>
-                            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-slate-50">
+                            {/* <div className="bg-[#F8FAFC] p-4 rounded-xl border border-slate-50">
                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Salary</div>
                                 <div className="flex items-center gap-2 font-bold text-slate-700 text-sm">
                                     <IndianRupee size={16} className="text-[#0D9488]" />
                                     {job.salary ? (!isNaN(job.salary) ? `₹${(job.salary / 1000)}k` : job.salary) : "Not Disclosed"}
                                 </div>
-                            </div>
+                            </div> */}
                             <div className="bg-[#F8FAFC] p-4 rounded-xl border border-slate-50">
                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Posted</div>
                                 <div className="flex items-center gap-2 font-bold text-slate-700 text-sm">

@@ -116,20 +116,8 @@ const JobCard = ({ job, index = 0 }) => {
                     <span>{applicantsCount} Applicants</span>
                 </div>
 
-                {/* Footer: Price & Button */}
-                <div className="flex items-center justify-between pt-0 mt-1">
-                    <div className="flex flex-col justify-center">
-                        {job.salary ? (
-                            <div className="flex items-baseline gap-0.5">
-                                <span className="text-[18px] font-bold text-[#0D9488] tracking-tight">
-                                    {!isNaN(job.salary) ? `₹${(job.salary / 1000)}k` : job.salary}
-                                </span>
-                                {!isNaN(job.salary) && <span className="text-[12px] font-medium text-slate-400">/m</span>}
-                            </div>
-                        ) : (
-                            <span className="text-[13px] font-bold text-slate-400">Not Applicable</span>
-                        )}
-                    </div>
+                {/* Footer: Button (Salary Hidden) */}
+                <div className="flex items-center justify-end pt-0 mt-1">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

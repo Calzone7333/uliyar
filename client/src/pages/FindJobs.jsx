@@ -284,7 +284,7 @@ const FindJobs = () => {
                     />
 
                     {/* Range Salary (INR) */}
-                    <FilterSection title="Range Salary" isOpen={true}>
+                    {/* <FilterSection title="Range Salary" isOpen={true}>
                         {['Less than ₹10k', '₹10k - ₹50k', 'More than ₹50k'].map(label => (
                             <Checkbox
                                 key={label}
@@ -304,7 +304,7 @@ const FindJobs = () => {
                             value={salaryRange}
                             onChange={setSalaryRange}
                         />
-                    </FilterSection>
+                    </FilterSection> */}
 
                     {/* Experience */}
                     <FilterSection title="Experience" isOpen={true}>
@@ -423,7 +423,7 @@ const FindJobs = () => {
                                     </button>
                                     {activeDropdown === 'sort' && (
                                         <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
-                                            {['Relevancy', 'Newest', 'Oldest', 'Salary High', 'Salary Low'].map(opt => (
+                                            {['Relevancy', 'Newest', 'Oldest'].map(opt => (
                                                 <button
                                                     key={opt}
                                                     onClick={() => { setSortBy(opt); setActiveDropdown(null); }}
