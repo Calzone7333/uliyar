@@ -270,17 +270,17 @@ const ApplyJobModal = ({ job, onClose }) => {
                                     />
                                     {errors.totalExperience && <p className="text-[10px] text-red-500 font-bold mt-1">{errors.totalExperience}</p>}
                                 </div>
-                                {/* <div className="hidden">
+                                <div>
                                     <label className="block text-xs font-bold text-slate-500 mb-1">Current Salary (/month)</label>
                                     <input type="number" name="currentSalary" value={formData.currentSalary} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-primary" placeholder="e.g. 15000" />
-                                </div> */}
+                                </div>
                             </div>
                         )}
 
-                        {/* <div className="hidden">
+                        <div>
                             <label className="block text-xs font-bold text-slate-500 mb-1">Expected Salary (/month)</label>
                             <input type="number" name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-primary" placeholder="e.g. 20000" />
-                        </div> */}
+                        </div>
                     </div>
                 );
 

@@ -109,11 +109,8 @@ const JobCard = ({ job, index = 0 }) => {
                     )}
                 </div>
 
-                {/* Meta: Time & Applicants */}
                 <div className="mt-auto mb-4 flex items-center gap-2 text-[11px] font-medium text-slate-400">
                     <span>{formatTimeAgo(job.createdAt || job.postedAt)}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    <span>{applicantsCount} Applicants</span>
                 </div>
 
                 {/* Footer: Button (Salary Hidden) */}
