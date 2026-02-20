@@ -25,7 +25,7 @@ import ScrollToTop from './components/ScrollToTop';
 const AppContent = () => {
   const { isAuthModalOpen, closeAuthModal, authModalView, authRole } = useUI();
   const location = useLocation();
-  const isDashboardPage = ['/admin', '/employer-dashboard', '/candidate-dashboard'].includes(location.pathname);
+  const isDashboardPage = ['/admin', '/employer-dashboard'].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">

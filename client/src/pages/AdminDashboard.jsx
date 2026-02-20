@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL, getImgUrl } from '../config';
 
 import { useAuth } from '../context/AuthContext';
-import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search } from 'lucide-react';
+import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search, Menu } from 'lucide-react';
 
 // Components
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -36,6 +36,7 @@ const AdminDashboard = () => {
     const [isPosting, setIsPosting] = useState(false);
     const [editJob, setEditJob] = useState(null);
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '' });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -195,11 +196,11 @@ const AdminDashboard = () => {
 
     return (
         <div className="min-h-screen bg-slate-50/50 flex">
-            {/* ... Sidebar ... */}
-            {/* Same logic as before */}
             <AdminSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
                 pendingCounts={{
                     resumes: pendingResumes.length,
                     companies: pendingCompanies.length,
@@ -211,22 +212,30 @@ const AdminDashboard = () => {
                 }}
             />
 
-            <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen custom-scrollbar">
-                {/* ... Header ... */}
-                <header className="flex justify-between items-center mb-10">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-                            {activeTab === 'dashboard' && 'Dashboard Overview'}
-                            {activeTab === 'resumes' && 'Verify Resumes'}
-                            {activeTab === 'companies' && 'Verify Companies'}
-                            {activeTab === 'jobs' && 'Verify Employer Jobs'}
-                            {activeTab === 'users_list' && 'All Users Database'}
-                            {activeTab === 'companies_list' && 'All Companies Database'}
-                            {activeTab === 'post_job' && (editJob ? 'Edit Admin Job' : 'Post Admin Job')}
-                            {activeTab === 'admin_jobs' && 'My Admin Jobs'}
-                            {activeTab === 'job_applications' && 'Applications for Admin Jobs'}
-                        </h1>
-                        <p className="text-slate-500 mt-1">System Administration Panel</p>
+            <main className="flex-1 lg:ml-64 p-4 md:p-8 overflow-y-auto h-screen custom-scrollbar">
+                {/* Header */}
+                <header className="flex justify-between items-center mb-6 md:mb-10">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="lg:hidden p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-600"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <div>
+                            <h1 className="text-xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                                {activeTab === 'dashboard' && 'Dashboard Overview'}
+                                {activeTab === 'resumes' && 'Verify Resumes'}
+                                {activeTab === 'companies' && 'Verify Companies'}
+                                {activeTab === 'jobs' && 'Verify Employer Jobs'}
+                                {activeTab === 'users_list' && 'All Users Database'}
+                                {activeTab === 'companies_list' && 'All Companies Database'}
+                                {activeTab === 'post_job' && (editJob ? 'Edit Admin Job' : 'Post Admin Job')}
+                                {activeTab === 'admin_jobs' && 'My Admin Jobs'}
+                                {activeTab === 'job_applications' && 'Applications for Admin Jobs'}
+                            </h1>
+                            <p className="text-slate-500 mt-1 text-xs md:text-sm">System Administration Panel</p>
+                        </div>
                     </div>
                 </header>
 

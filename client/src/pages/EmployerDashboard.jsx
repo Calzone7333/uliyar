@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Briefcase, Building, AlertCircle, Loader, Plus, Users, Shield, MapPin, Globe, X, Upload } from 'lucide-react';
+import { Briefcase, Building, AlertCircle, Loader, Plus, Users, Shield, MapPin, Globe, X, Upload, Menu } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config';
@@ -21,6 +21,7 @@ const EmployerDashboard = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [applicants, setApplicants] = useState([]);
     const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -170,25 +171,34 @@ const EmployerDashboard = () => {
 
     return (
         <div className="min-h-screen bg-slate-50/50 flex relative">
-            {/* Sidebar */}
             <EmployerSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
                 onLogout={() => { logout(); navigate('/'); }}
                 companyName={company?.name || 'My Company'}
             />
 
-            <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen custom-scrollbar">
+            <main className="flex-1 lg:ml-64 p-4 md:p-8 overflow-y-auto h-screen custom-scrollbar">
                 {/* Header */}
-                <header className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-                            {activeTab === 'dashboard' && 'Dashboard Overview'}
-                            {activeTab === 'jobs' && 'My Jobs & Applicants'}
-                            {activeTab === 'post-job' && 'Post a New Job'}
-                            {activeTab === 'profile' && 'Company Profile'}
-                        </h1>
-                        <p className="text-slate-500 mt-1 text-sm">Manage your recruitment pipeline efficiently.</p>
+                <header className="flex justify-between items-center mb-6 md:mb-8">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="lg:hidden p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-600"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <div>
+                            <h1 className="text-xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                                {activeTab === 'dashboard' && 'Dashboard Overview'}
+                                {activeTab === 'jobs' && 'My Jobs & Applicants'}
+                                {activeTab === 'post-job' && 'Post a New Job'}
+                                {activeTab === 'profile' && 'Company Profile'}
+                            </h1>
+                            <p className="text-slate-500 mt-1 text-xs md:text-sm">Manage your recruitment pipeline efficiently.</p>
+                        </div>
                     </div>
                 </header>
 
