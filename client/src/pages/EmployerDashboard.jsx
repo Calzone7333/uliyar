@@ -11,6 +11,7 @@ import EmployerStats from '../components/employer/EmployerStats';
 import EmployerJobs from '../components/employer/EmployerJobs';
 import PostJobForm from '../components/employer/PostJobForm';
 import CompanyProfileSection from '../components/employer/CompanyProfileSection';
+import EmployerPlan from '../components/employer/EmployerPlan';
 
 const EmployerDashboard = () => {
     const { user, login, loading, logout } = useAuth();
@@ -169,6 +170,8 @@ const EmployerDashboard = () => {
 
     if (loading || isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader className="animate-spin text-blue-600" /></div>;
 
+    const isPlanActive = (user && user.role === 'admin') || (company && company.plan_expiry_date && new Date(company.plan_expiry_date) > new Date());
+
     return (
         <div className="min-h-screen bg-slate-50/50 flex relative">
             <EmployerSidebar
@@ -178,6 +181,7 @@ const EmployerDashboard = () => {
                 onClose={() => setIsSidebarOpen(false)}
                 onLogout={() => { logout(); navigate('/'); }}
                 companyName={company?.name || 'My Company'}
+                isPlanActive={isPlanActive}
             />
 
             <main className="flex-1 lg:ml-64 p-4 md:p-8 overflow-y-auto h-screen custom-scrollbar">
@@ -196,6 +200,7 @@ const EmployerDashboard = () => {
                                 {activeTab === 'jobs' && 'My Jobs & Applicants'}
                                 {activeTab === 'post-job' && 'Post a New Job'}
                                 {activeTab === 'profile' && 'Company Profile'}
+                                {activeTab === 'plan' && 'Subscription Plan'}
                             </h1>
                             <p className="text-slate-500 mt-1 text-xs md:text-sm">Manage your recruitment pipeline efficiently.</p>
                         </div>
@@ -272,7 +277,25 @@ const EmployerDashboard = () => {
                     )}
 
                     {activeTab === 'post-job' && company && (
-                        <PostJobForm user={user} company={company} setActiveTab={setActiveTab} />
+                        isPlanActive ? (
+                            <PostJobForm user={user} company={company} setActiveTab={setActiveTab} />
+                        ) : (
+                            <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center max-w-2xl mx-auto shadow-sm">
+                                <Shield className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-slate-800 mb-2">Locked Feature</h3>
+                                <p className="text-slate-500 mb-6">Posting a job is locked because your "Standard Plan" is inactive. Subscribe to unlock unlimited recruiting.</p>
+                                <button
+                                    onClick={() => setActiveTab('plan')}
+                                    className="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-teal-700 transition shadow-lg shadow-primary/20"
+                                >
+                                    Activate Plan
+                                </button>
+                            </div>
+                        )
+                    )}
+
+                    {activeTab === 'plan' && company && (
+                        <EmployerPlan user={user} company={company} setActiveTab={setActiveTab} />
                     )}
 
                     {activeTab === 'profile' && company && (

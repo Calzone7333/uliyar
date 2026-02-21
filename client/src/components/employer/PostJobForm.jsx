@@ -38,100 +38,8 @@ const PostJobForm = ({ user, company, setActiveTab }) => {
         }
     };
 
-    const loadRazorpayScript = () => {
-        return new Promise((resolve) => {
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = () => resolve(true);
-            script.onerror = () => resolve(false);
-            document.body.appendChild(script);
-        });
-    };
-
-    const handlePaymentAndSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Admin gets to post jobs without paying
-        if (user && user.role === 'admin') {
-            postJobToBackend();
-            return;
-        }
-
-        setLoading(true);
-
-        const resScript = await loadRazorpayScript();
-        if (!resScript) {
-            alert("Razorpay SDK failed to load. Are you online?");
-            setLoading(false);
-            return;
-        }
-
-        try {
-            // 1. Create Order
-            const orderRes = await fetch(`${API_BASE_URL}/api/create-razorpay-order`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: 499 })
-            });
-            const orderData = await orderRes.json();
-
-            if (!orderRes.ok || !orderData.id) {
-                alert(orderData.error || "Failed to initiate payment");
-                setLoading(false);
-                return;
-            }
-
-            // 2. Open Razorpay Checkout Modal
-            const options = {
-                key: "rzp_test_YourKeyIdHere", // MUST MATCH BACKEND!
-                amount: orderData.amount,
-                currency: "INR",
-                name: "Uliyar Verified Network",
-                description: "Employer Job Posting Fee",
-                order_id: orderData.id,
-                theme: { color: "#2563EB" },
-                handler: async function (response) {
-                    try {
-                        setLoading(true);
-                        // 3. Verify Payment Signature
-                        const verifyRes = await fetch(`${API_BASE_URL}/api/verify-razorpay-payment`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(response)
-                        });
-                        const verifyData = await verifyRes.json();
-
-                        if (verifyRes.ok && verifyData.success) {
-                            // Payment Verified! Now Post Job
-                            postJobToBackend();
-                        } else {
-                            alert("Payment verification failed. If money was deducted, contact support.");
-                            setLoading(false);
-                        }
-                    } catch (error) {
-                        console.error("Verification error:", error);
-                        alert("Exception verifying payment.");
-                        setLoading(false);
-                    }
-                },
-                modal: {
-                    ondismiss: function () {
-                        setLoading(false);
-                    }
-                }
-            };
-
-            const paymentObject = new window.Razorpay(options);
-            paymentObject.open();
-
-        } catch (error) {
-            console.error("Order error:", error);
-            alert("Error initiating checkout.");
-            setLoading(false);
-        }
-    };
-
-    const postJobToBackend = async () => {
         setLoading(true);
 
         try {
@@ -174,7 +82,7 @@ const PostJobForm = ({ user, company, setActiveTab }) => {
                 </div>
             </div>
 
-            <form onSubmit={handlePaymentAndSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 {/* Section 1: Basic Info */}
                 <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-slate-700 border-b border-slate-100 pb-1 uppercase tracking-wider">Basic Details</h3>
@@ -278,7 +186,7 @@ const PostJobForm = ({ user, company, setActiveTab }) => {
                         className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700 transition-all text-sm flex items-center gap-2"
                     >
                         {loading ? <Loader className="animate-spin" size={16} /> : <PlusCircle size={16} />}
-                        {user && user.role === 'admin' ? "Post Job" : "Pay & Post Job (₹499)"}
+                        Post Job
                     </button>
                 </div>
             </form>

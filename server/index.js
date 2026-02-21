@@ -196,7 +196,8 @@ function runMigrations() {
         { table: 'users', col: 'interested_category TEXT' },
         { table: 'users', col: 'target_roles TEXT' },
         { table: 'companies', col: 'business_proof_path TEXT' },
-        { table: 'companies', col: 'id_proof_path TEXT' }
+        { table: 'companies', col: 'id_proof_path TEXT' },
+        { table: 'companies', col: 'plan_expiry_date TEXT' }
     ];
     columns.forEach(mig => {
         // MySQL check if column exists is complex, but we can try IGNORE or just catch error
@@ -548,14 +549,23 @@ app.post('/api/create-razorpay-order', async (req, res) => {
 
 app.post('/api/verify-razorpay-payment', (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, employerId } = req.body;
         const sign = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSign = crypto.createHmac("sha256", RAZORPAY_KEY_SECRET)
             .update(sign.toString())
             .digest("hex");
 
         if (razorpay_signature === expectedSign) {
-            res.json({ success: true, message: "Payment verified successfully" });
+            if (employerId) {
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                db.run("UPDATE companies SET plan_expiry_date = ? WHERE recruiterId = ?", [expiryDate.toISOString(), employerId], (err) => {
+                    if (err) console.error("Error updating expiry date", err);
+                    res.json({ success: true, message: "Payment verified successfully" });
+                });
+            } else {
+                res.json({ success: true, message: "Payment verified successfully" });
+            }
         } else {
             res.status(400).json({ success: false, error: "Invalid signature" });
         }
@@ -569,24 +579,39 @@ app.post('/api/verify-razorpay-payment', (req, res) => {
 app.post('/api/jobs', (req, res) => {
     const { title, company, location, type, salary, experience, tags, employerId, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, category } = req.body;
 
-    db.get("SELECT account_status FROM users WHERE id = ?", [employerId], (err, user) => {
+    db.get("SELECT account_status, role FROM users WHERE id = ?", [employerId], (err, user) => {
         if (user && user.account_status !== 'ACTIVE') return res.status(403).json({ error: "Account not verified" });
+
+        if (user && user.role === 'admin') {
+            insertJob();
+            return;
+        }
 
         db.get("SELECT * FROM companies WHERE recruiterId = ?", [employerId], (err, comp) => {
             if (!comp) return res.status(403).json({ error: "Company profile missing" });
             if (comp.status !== 'APPROVED') return res.status(403).json({ error: "Company not approved by Admin yet" });
 
-            const tagsString = JSON.stringify(tags || []);
-            const finalCompanyName = comp.name || company;
+            // Check Plan Expiry
+            const hasValidPlan = comp.plan_expiry_date && (new Date(comp.plan_expiry_date) > new Date());
+            if (!hasValidPlan) return res.status(403).json({ error: "Subscription plan inactive or expired. Please subscribe to post jobs." });
 
-            const sql = `INSERT INTO jobs(title, company, location, type, salary, experience, tags, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, postedAt, employerId, companyId, status, category, subCategory) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Just now", ?, ?, 'PENDING', ?, ?)`;
+            insertJob(comp);
+        });
+
+        function insertJob(comp) {
+            const tagsString = JSON.stringify(tags || []);
+            const finalCompanyName = comp ? (comp.name || company) : (company || 'Uliyar');
+            const compId = comp ? comp.id : null;
+            const jobStatus = (user && user.role === 'admin') ? 'APPROVED' : 'PENDING';
+
+            const sql = `INSERT INTO jobs(title, company, location, type, salary, experience, tags, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, postedAt, employerId, companyId, status, category, subCategory) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Just now", ?, ?, ?, ?, ?)`;
 
             db.run(sql,
-                [title, finalCompanyName, location, type, salary, experience, tagsString, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, employerId, comp.id, category, req.body.subCategory || ''], function (err) {
+                [title, finalCompanyName, location, type, salary, experience, tagsString, description, skills_required, vacancies, work_mode, benefits, deadline, education_required, food_allowance, accommodation, employerId, compId, jobStatus, category, req.body.subCategory || ''], function (err) {
                     if (err) return res.status(500).json({ error: err.message });
-                    res.status(201).json({ id: this.lastID, message: "Job submitted for Admin Approval" });
+                    res.status(201).json({ id: this.lastID, message: "Job submitted successfully" });
                 });
-        });
+        }
     });
 });
 

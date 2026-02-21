@@ -7,15 +7,18 @@ import {
     Users,
     LogOut,
     Shield,
-    X
+    X,
+    CreditCard,
+    Lock
 } from 'lucide-react';
 
-const EmployerSidebar = ({ activeTab, setActiveTab, onLogout, companyName, isOpen, onClose }) => {
+const EmployerSidebar = ({ activeTab, setActiveTab, onLogout, companyName, isOpen, onClose, isPlanActive }) => {
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'jobs', label: 'My Jobs & Applicants', icon: Briefcase },
-        { id: 'post-job', label: 'Post a New Job', icon: PlusCircle },
+        { id: 'post-job', label: 'Post a New Job', icon: PlusCircle, locked: !isPlanActive },
         { id: 'profile', label: 'Company Profile', icon: Building2 },
+        { id: 'plan', label: 'Plan & Billing', icon: CreditCard },
     ];
 
     return (
@@ -59,7 +62,8 @@ const EmployerSidebar = ({ activeTab, setActiveTab, onLogout, companyName, isOpe
                                 }`}
                         >
                             <item.icon size={18} className={`mr-3 ${activeTab === item.id ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                            <span>{item.label}</span>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.locked && <Lock size={14} className="text-slate-400 opacity-50" />}
                         </button>
                     ))}
                 </div>
