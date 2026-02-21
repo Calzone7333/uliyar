@@ -7,6 +7,8 @@ const fs = require('fs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const GOOGLE_CLIENT_ID = "273337002665-v05ss3t2sgah54nk1f3j192rdsokre7f.apps.googleusercontent.com";
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -516,6 +518,51 @@ app.put('/api/company/:id', upload.fields([{ name: 'logo', maxCount: 1 }]), (req
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
+});
+
+// --- RAZORPAY INTEGRATION ---
+// IMPORTANT: Replace these dummy test keys with your actual Razorpay Keys!
+const RAZORPAY_KEY_ID = 'rzp_live_RsCU4fzmfxNC71';
+const RAZORPAY_KEY_SECRET = 't8rH6pclcf1r00xVUMsNJ1b4';
+
+const razorpay = new Razorpay({
+    key_id: RAZORPAY_KEY_ID,
+    key_secret: RAZORPAY_KEY_SECRET,
+});
+
+app.post('/api/create-razorpay-order', async (req, res) => {
+    try {
+        const { amount } = req.body;
+        const options = {
+            amount: amount * 100, // Amount in paise (499 * 100)
+            currency: 'INR',
+            receipt: `job_post_receipt_${Date.now()}`
+        };
+        const order = await razorpay.orders.create(options);
+        res.json(order);
+    } catch (error) {
+        console.error("Razorpay Order Error:", error);
+        res.status(500).json({ error: "Failed to create order" });
+    }
+});
+
+app.post('/api/verify-razorpay-payment', (req, res) => {
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const sign = razorpay_order_id + "|" + razorpay_payment_id;
+        const expectedSign = crypto.createHmac("sha256", RAZORPAY_KEY_SECRET)
+            .update(sign.toString())
+            .digest("hex");
+
+        if (razorpay_signature === expectedSign) {
+            res.json({ success: true, message: "Payment verified successfully" });
+        } else {
+            res.status(400).json({ success: false, error: "Invalid signature" });
+        }
+    } catch (error) {
+        console.error("Payment Verify Error:", error);
+        res.status(500).json({ error: "Failed to verify signature" });
+    }
 });
 
 // 2. Job Post (Only if Company APPROVED)
