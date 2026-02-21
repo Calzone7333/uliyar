@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Features = () => {
+    const { t } = useTranslation();
     const [activeIndex, setActiveIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(true);
 
@@ -50,18 +52,18 @@ const Features = () => {
     }, [activeIndex, features.length]);
 
     return (
-        <div className="py-24 bg-white">
+        <div className="py-24 bg-white" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', letterSpacing: '-0.02em' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col lg:flex-row gap-16 items-start">
 
                     {/* Left Content */}
                     <div className="w-full lg:w-5/12 pt-8">
-                        <h2 className="text-base font-medium text-slate-900 mb-4">Features</h2>
-                        <h3 className="text-5xl font-medium text-slate-900 mb-6 leading-tight">
+                        <h2 className="text-primary font-bold text-[12px] tracking-wider uppercase mb-4">{t("Features")}</h2>
+                        <h3 className="text-4xl lg:text-5xl font-[700] text-slate-800 mb-6 leading-[1.2]">
                             Everything you need to <br />
                             work or hire
                         </h3>
-                        <p className="text-slate-600 text-base leading-relaxed max-w-sm">
+                        <p className="text-[17px] text-slate-600 font-[500] leading-relaxed max-w-sm">
                             We built a platform that simplifies the entire process. Whether you are looking for your next gig or need to crew up fast, we have the tools you need.
                         </p>
                         {/* Progress Indicators */}

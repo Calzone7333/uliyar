@@ -1,212 +1,111 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, MapPin, ChevronDown, Filter, X, Grid, List, Check, RotateCcw } from 'lucide-react';
+import { Search, MapPin, ChevronDown, ChevronUp, Filter, X, Grid, List, Check, RotateCcw, Folder, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import JobCard from '../components/JobCard';
 import { API_BASE_URL } from '../config';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
 
 // --- HELPER COMPONENTS ---
 
-const FilterSection = ({ title, children, isOpen = true }) => {
-    const [open, setOpen] = useState(isOpen);
+const FilterSection = ({ title, children, defaultOpen = true }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="py-6 border-b border-gray-100 last:border-0">
-            <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center justify-between w-full mb-4 group outline-none"
-            >
-                <h3 className="font-bold text-slate-900 text-[15px] group-hover:text-[#0D9488] transition-colors">{title}</h3>
-                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+        <div className="border-b border-slate-100 last:border-0">
+            <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition-colors focus:outline-none">
+                <span className="text-[13px] font-[600] text-slate-800">{title}</span>
+                {isOpen ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
             </button>
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="space-y-3">
-                    {children}
-                </div>
-            </div>
+            {isOpen && <div className="p-4 pt-0">{children}</div>}
         </div>
     );
 };
 
-const Checkbox = ({ label, count, checked, onChange }) => (
+const Checkbox = ({ label, count, checked, onChange, type = "checkbox" }) => (
     <label
-        className="flex items-center justify-between cursor-pointer group py-1 select-none"
+        className="flex items-center gap-3 cursor-pointer group py-1.5 select-none"
         onClick={(e) => {
             e.preventDefault();
             onChange();
         }}
     >
-        <div className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded-[6px] border flex items-center justify-center transition-all duration-200 ${checked ? 'border-[#0D9488] bg-[#0D9488]' : 'border-slate-300 group-hover:border-[#0D9488] bg-white'}`}>
+        {type === "checkbox" ? (
+            <div className={`w-[16px] h-[16px] rounded-[3px] border flex items-center justify-center transition-all ${checked ? 'border-primary bg-primary' : 'border-slate-300 bg-white group-hover:border-primary'}`}>
                 {checked && <Check size={12} className="text-white stroke-[3]" />}
             </div>
-            <span className={`text-[13px] font-medium transition-colors ${checked ? 'text-slate-900 font-semibold' : 'text-slate-500 group-hover:text-slate-900'}`}>
-                {label}
-            </span>
-        </div>
-        {count !== undefined && <span className="text-[11px] text-slate-400 font-medium">{count}</span>}
+        ) : (
+            <div className={`w-[16px] h-[16px] rounded-full border flex items-center justify-center transition-all ${checked ? 'border-primary' : 'border-slate-300 bg-white group-hover:border-primary'}`}>
+                {checked && <div className="w-[8px] h-[8px] rounded-full bg-primary" />}
+            </div>
+        )}
+        <span className={`text-[13px] transition-colors ${checked ? 'text-slate-700 font-[400]' : 'text-slate-600 hover:text-slate-800 group-hover:text-slate-800 font-[400]'}`}>
+            {label}
+        </span>
     </label>
 );
-
-const ToggleSwitch = ({ label, checked, onChange }) => (
-    <div className="flex items-center justify-between py-5 border-b border-gray-100">
-        <span className="font-bold text-slate-900 text-[15px]">{label}</span>
-        <button
-            onClick={() => onChange(!checked)}
-            className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-[#0D9488]' : 'bg-slate-200'}`}
-        >
-            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${checked ? 'translate-x-5' : ''}`}></div>
-        </button>
-    </div>
-);
-
-// Custom Dual Range Slider with Histogram
-const SalarySlider = ({ min, max, value, onChange }) => {
-    const minVal = value[0];
-    const maxVal = value[1];
-    const getPercent = (v) => Math.round(((v - min) / (max - min)) * 100);
-
-    return (
-        <div className="px-1 pb-4 pt-4">
-            {/* Histogram approximation */}
-            <div className="flex items-end gap-1 h-12 mb-2 px-2 opacity-50">
-                {[4, 7, 5, 9, 12, 8, 6, 10, 14, 9, 5, 3].map((h, i) => (
-                    <div key={i} className="flex-1 bg-teal-200 rounded-t-sm" style={{ height: `${h * 8}%` }}></div>
-                ))}
-            </div>
-
-            <div className="relative h-1.5 bg-slate-100 rounded-full w-full">
-                <div
-                    className="absolute h-full bg-[#0D9488] rounded-full alpha"
-                    style={{ left: `${getPercent(minVal)}%`, width: `${getPercent(maxVal) - getPercent(minVal)}%` }}
-                ></div>
-                <input
-                    type="range"
-                    min={min} max={max}
-                    value={minVal}
-                    onChange={(event) => {
-                        const value = Math.min(Number(event.target.value), maxVal - 1);
-                        onChange([value, maxVal]);
-                    }}
-                    className="absolute w-full h-full opacity-0 cursor-pointer pointer-events-auto z-30"
-                    style={{ zIndex: minVal > max - 100 && "50" }}
-                />
-                <input
-                    type="range"
-                    min={min} max={max}
-                    value={maxVal}
-                    onChange={(event) => {
-                        const value = Math.max(Number(event.target.value), minVal + 1);
-                        onChange([minVal, value]);
-                    }}
-                    className="absolute w-full h-full opacity-0 cursor-pointer pointer-events-auto z-40"
-                />
-                {/* Thumbs with teal outline circle and white fill like reference/material design somewhat */}
-                <div className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 border-[#0D9488] rounded-full shadow-md pointer-events-none transition-transform hover:scale-110 flex items-center justify-center cursor-grab" style={{ left: `${getPercent(minVal)}%`, transform: 'translate(-50%, -50%)' }}>
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-                <div className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 border-[#0D9488] rounded-full shadow-md pointer-events-none transition-transform hover:scale-110 flex items-center justify-center cursor-grab" style={{ left: `${getPercent(maxVal)}%`, transform: 'translate(-50%, -50%)' }}>
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-            </div>
-
-            <div className="flex justify-between mt-4 font-bold text-slate-600 text-sm">
-                <span>₹{minVal}k</span>
-                <span>₹{maxVal}k</span>
-            </div>
-        </div>
-    );
-};
 
 
 // --- MAIN PAGE COMPONENT ---
 
 const FindJobs = () => {
+    const { t } = useTranslation();
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Filter States
     const [searchQuery, setSearchQuery] = useState("");
+    const [locationQuery, setLocationQuery] = useState("");
 
-    // Category & Sub-Category
+    // Category
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
-    const [selectedSubCategory, setSelectedSubCategory] = useState("All Sub-categories");
 
     // Sidebar Filters
     const [jobTypes, setJobTypes] = useState([]);
-    const [openToRemote, setOpenToRemote] = useState(true);
-    const [salaryRange, setSalaryRange] = useState([10, 200]); // in K INR
-    const [salaryPreset, setSalaryPreset] = useState([]);
+    const [salaryMin, setSalaryMin] = useState("Min");
+    const [salaryMax, setSalaryMax] = useState("Max");
     const [experienceLevel, setExperienceLevel] = useState([]);
+    const [careerLevel, setCareerLevel] = useState([]);
 
     // Sort & View
-    const [sortBy, setSortBy] = useState("Relevancy");
-    const [viewMode, setViewMode] = useState('grid');
+    const [sortBy, setSortBy] = useState("Newest");
+    const [viewMode, setViewMode] = useState('list');
 
-    // Dynamic Counts State
-    const [jobTypeCounts, setJobTypeCounts] = useState([]);
-    const [expLevelCounts, setExpLevelCounts] = useState([]);
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const jobsPerPage = 15;
 
     // UI Dropdowns
     const [activeDropdown, setActiveDropdown] = useState(null);
-
-    const { openLogin } = useUI();
-    const { user } = useAuth();
-    const navigate = useNavigate();
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     // Data Fetching: Filter Counts (Mock or Real)
     useEffect(() => {
-        const fetchCounts = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/jobs-filter-counts`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setJobTypeCounts(data.jobTypes || []);
-                    setExpLevelCounts(data.experienceLevels || []);
-                }
-            } catch (error) {
-                console.error("Error fetching filter counts:", error);
-            }
-        };
-        fetchCounts();
+        // Mock fetch if needed
     }, []);
 
     // Helper: Category Options
     const categoryOptions = useMemo(() => ["All Categories", ...Object.keys(JOB_CATEGORIES)], []);
-    const subCategoryOptions = useMemo(() => {
-        if (!selectedCategory || selectedCategory === "All Categories") return ["All Sub-categories"];
-        return ["All Sub-categories", ...(JOB_CATEGORIES[selectedCategory] || [])];
-    }, [selectedCategory]);
-
-    // Update Sub-category whenever Category changes
-    useEffect(() => {
-        setSelectedSubCategory("All Sub-categories");
-    }, [selectedCategory]);
 
     // Data Fetching: Jobs
     useEffect(() => {
-        const timer = setTimeout(() => fetchJobs(), 500);
+        const timer = setTimeout(() => {
+            setCurrentPage(1); // Reset to first page when filters change
+            fetchJobs();
+        }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedCategory, selectedSubCategory, jobTypes, experienceLevel, sortBy, salaryRange, salaryPreset, openToRemote]);
+    }, [searchQuery, locationQuery, selectedCategory, jobTypes, experienceLevel, careerLevel, sortBy, salaryMin, salaryMax]);
 
     const fetchJobs = async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams();
             if (searchQuery) params.append('q', searchQuery);
-
+            if (locationQuery) params.append('location', locationQuery);
             if (selectedCategory && selectedCategory !== "All Categories") params.append('category', selectedCategory);
-            if (selectedSubCategory && selectedSubCategory !== "All Sub-categories") params.append('subCategory', selectedSubCategory);
-
             if (jobTypes.length > 0) params.append('type', jobTypes.join(','));
-            if (openToRemote) params.append('remote', 'true');
-
-            // Salary Logic - Assuming standard 'k' values for INR range 
-            // 10k to 200k INR
-            params.append('minSalary', salaryRange[0] * 1000);
-            params.append('maxSalary', salaryRange[1] * 1000);
-
+            if (salaryMin !== "Min" && salaryMin > 0) params.append('minSalary', salaryMin);
             params.append('sortBy', sortBy);
 
             const response = await fetch(`${API_BASE_URL}/api/jobs?${params.toString()}`);
@@ -214,14 +113,6 @@ const FindJobs = () => {
 
             if (Array.isArray(data)) {
                 let filtered = data;
-                // Client-side filtering for Experience
-                if (experienceLevel.length > 0) {
-                    filtered = filtered.filter(job => {
-                        const level = (job.level || job.experience || "").toLowerCase();
-                        return experienceLevel.some(exp => level.includes(exp.toLowerCase()));
-                    });
-                }
-
                 setJobs(filtered);
             } else {
                 setJobs([]);
@@ -242,268 +133,257 @@ const FindJobs = () => {
     const clearAllFilters = () => {
         setJobTypes([]);
         setExperienceLevel([]);
-        setSalaryRange([10, 200]);
-        setSalaryPreset([]);
-        setOpenToRemote(false);
+        setCareerLevel([]);
+        setSalaryMin("Min");
+        setSalaryMax("Max");
         setSearchQuery("");
+        setLocationQuery("");
         setSelectedCategory("All Categories");
-        setSelectedSubCategory("All Sub-categories");
+        setSortBy("Newest");
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
+        <div className="min-h-screen bg-[#F4F5F7] font-sans text-slate-900 pb-20" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+            <div className="max-w-[1240px] mx-auto p-4 md:p-6 pt-8 flex flex-col gap-6">
 
-            <div className="max-w-[1600px] mx-auto p-6 md:p-8 flex gap-8">
+                {/* Title & Small Search Bar inline */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+                    <h1 className="text-[18px] md:text-[20px] font-[600] text-[#1E293B]">
+                        {searchQuery ? `${searchQuery} Jobs` : "All Jobs"} - {jobs.length || 600} Verified Vacancies
+                    </h1>
 
-                {/* --- LEFT SIDEBAR --- */}
-                <aside className="w-[280px] flex-shrink-0 bg-white rounded-[16px] p-6 h-fit sticky top-24 hidden lg:block shadow-sm boorder border-slate-100">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-slate-900">Filter</h2>
-                        <button onClick={clearAllFilters} className="text-sm font-bold text-[#0D9488] hover:text-[#0D9488]/80">
-                            Clear All
-                        </button>
-                    </div>
-
-                    {/* Job Type */}
-                    <FilterSection title="Job Type" isOpen={true}>
-                        {['Contract', 'Full-Time', 'Part-Time', 'Internship'].map(label => (
-                            <Checkbox
-                                key={label}
-                                label={label}
-                                checked={jobTypes.includes(label)}
-                                onChange={() => handleCheckboxChange(setJobTypes, jobTypes, label)}
-                            />
-                        ))}
-                    </FilterSection>
-
-                    {/* Remote Toggle */}
-                    <ToggleSwitch
-                        label="Open to remote"
-                        checked={openToRemote}
-                        onChange={setOpenToRemote}
-                    />
-
-                    {/* Range Salary (INR) */}
-                    <FilterSection title="Range Salary" isOpen={true}>
-                        {['Less than ₹10k', '₹10k - ₹50k', 'More than ₹50k'].map(label => (
-                            <Checkbox
-                                key={label}
-                                label={label}
-                                checked={salaryPreset.includes(label)}
-                                onChange={() => handleCheckboxChange(setSalaryPreset, salaryPreset, label)}
-                            />
-                        ))}
-                        <Checkbox
-                            label="Custom"
-                            checked={true}
-                            onChange={() => { }}
+                    <div className="flex items-center bg-white rounded-[6px] border border-slate-200 px-3 py-2 w-full md:w-80 shadow-sm relative focus-within:border-primary transition-colors">
+                        <Search size={16} className="text-slate-400 absolute left-3" />
+                        <input
+                            type="text"
+                            placeholder="Search jobs by title, company..."
+                            className="w-full bg-transparent outline-none text-[13px] text-slate-700 font-[500] placeholder:text-slate-400 placeholder:font-[400] pl-6"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <SalarySlider
-                            min={10}
-                            max={200}
-                            value={salaryRange}
-                            onChange={setSalaryRange}
-                        />
-                    </FilterSection>
-
-                    {/* Experience */}
-                    <FilterSection title="Experience" isOpen={true}>
-                        {['Less than a year', '1-3 years', '3-5 years', '5-10 years'].map(label => (
-                            <Checkbox
-                                key={label}
-                                label={label}
-                                checked={experienceLevel.includes(label)}
-                                onChange={() => handleCheckboxChange(setExperienceLevel, experienceLevel, label)}
-                            />
-                        ))}
-                    </FilterSection>
-
-                </aside>
-
-
-                {/* --- RIGHT CONTENT --- */}
-                <main className="flex-1 w-full min-w-0">
-
-                    {/* Top Search Bar with Category & Sub-category */}
-                    <div className="bg-white p-2 rounded-[16px] shadow-sm mb-8 flex flex-col xl:flex-row items-center gap-0 border border-slate-100 divide-y xl:divide-y-0 xl:divide-x divide-gray-100">
-                        {/* Keyword Input */}
-                        <div className="flex-[1.2] flex items-center px-4 py-3 gap-3 w-full">
-                            <Search className="text-slate-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Job title, keywords, or company"
-                                className="w-full bg-transparent outline-none text-slate-700 font-medium placeholder:text-slate-400"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Category Dropdown */}
-                        <div className="relative flex-1 w-full">
-                            <button
-                                onClick={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}
-                                className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors h-full"
-                            >
-                                <div className="flex flex-col items-start truncate">
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Category</span>
-                                    <span className="text-sm font-bold text-slate-900 truncate max-w-[180px]">{selectedCategory}</span>
-                                </div>
-                                <ChevronDown size={16} className={`text-slate-400 transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
-                            </button>
-                            {activeDropdown === 'category' && (
-                                <div className="absolute left-0 top-full mt-2 w-full max-h-[300px] overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
-                                    {categoryOptions.map(cat => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => { setSelectedCategory(cat); setActiveDropdown(null); }}
-                                            className={`block w-full text-left px-5 py-3 text-sm font-medium hover:bg-[#F0FDFA] hover:text-[#0D9488] transition-colors border-b border-gray-50 last:border-0 ${selectedCategory === cat ? 'bg-[#F0FDFA] text-[#0D9488]' : 'text-slate-600'}`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Sub-Category Dropdown */}
-                        <div className="relative flex-1 w-full">
-                            <button
-                                onClick={() => setActiveDropdown(activeDropdown === 'subcategory' ? null : 'subcategory')}
-                                className={`w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors h-full ${selectedCategory === "All Categories" ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={selectedCategory === "All Categories"}
-                            >
-                                <div className="flex flex-col items-start truncate">
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sub-Category</span>
-                                    <span className="text-sm font-bold text-slate-900 truncate max-w-[180px]">{selectedSubCategory}</span>
-                                </div>
-                                <ChevronDown size={16} className={`text-slate-400 transition-transform ${activeDropdown === 'subcategory' ? 'rotate-180' : ''}`} />
-                            </button>
-                            {activeDropdown === 'subcategory' && subCategoryOptions.length > 0 && (
-                                <div className="absolute left-0 top-full mt-2 w-full max-h-[300px] overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
-                                    {subCategoryOptions.map(sub => (
-                                        <button
-                                            key={sub}
-                                            onClick={() => { setSelectedSubCategory(sub); setActiveDropdown(null); }}
-                                            className={`block w-full text-left px-5 py-3 text-sm font-medium hover:bg-[#F0FDFA] hover:text-[#0D9488] transition-colors border-b border-gray-50 last:border-0 ${selectedSubCategory === sub ? 'bg-[#F0FDFA] text-[#0D9488]' : 'text-slate-600'}`}
-                                        >
-                                            {sub}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-
-                        {/* Search Button */}
-                        <div className="p-2 w-full xl:w-auto">
-                            <button
-                                onClick={fetchJobs}
-                                className="w-full xl:w-auto bg-[#0D9488] hover:bg-[#0D9488]/90 text-white font-bold px-8 py-3 rounded-[12px] transition-all shadow-lg shadow-teal-200"
-                            >
-                                Search
-                            </button>
-                        </div>
                     </div>
+                </div>
 
-                    {/* Results Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                        <h2 className="text-[15px] font-medium text-slate-500">
-                            Showing <span className="text-slate-900 font-bold">{jobs.length}</span> Jobs <span className="text-slate-900 font-bold">{searchQuery ? searchQuery : ""}</span> in <span className="text-slate-900 font-bold">{selectedCategory !== "All Categories" ? selectedCategory : "All Categories"}</span>
-                        </h2>
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-                        <div className="flex items-center gap-4 mt-4 md:mt-0">
-                            <div className="flex items-center gap-2 text-slate-500 font-medium text-[14px]">
-                                <span>Sort by</span>
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setActiveDropdown(activeDropdown === 'sort' ? null : 'sort')}
-                                        className="flex items-center gap-1.5 text-slate-900 font-bold hover:text-[#0D9488] transition-colors"
-                                    >
-                                        {sortBy} <ChevronDown size={14} />
-                                    </button>
-                                    {activeDropdown === 'sort' && (
-                                        <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
-                                            {['Relevancy', 'Newest', 'Oldest', 'Salary High', 'Salary Low'].map(opt => (
-                                                <button
-                                                    key={opt}
-                                                    onClick={() => { setSortBy(opt); setActiveDropdown(null); }}
-                                                    className="block w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#0D9488] font-medium"
-                                                >
-                                                    {opt}
-                                                </button>
-                                            ))}
+                    {/* --- MOBILE FILTER OVERLAY --- */}
+                    {showMobileFilters && (
+                        <div className="fixed inset-0 bg-slate-900/50 z-[100] lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setShowMobileFilters(false)}></div>
+                    )}
+
+                    {/* --- LEFT SIDEBAR --- */}
+                    <aside className={`fixed inset-y-0 left-0 z-[110] w-[260px] bg-white border border-slate-200 shadow-sm rounded-none md:rounded-[8px] transform transition-transform duration-300 overflow-y-auto lg:translate-x-0 lg:static lg:p-0 lg:shadow-sm lg:overflow-visible lg:h-fit lg:shrink-0 ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="flex items-center justify-between lg:hidden p-4 border-b border-slate-100">
+                            <h3 className="font-[600] text-slate-800 text-[16px]">Filters</h3>
+                            <button onClick={() => setShowMobileFilters(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4 border-b border-slate-100 flex items-center justify-between hidden lg:flex">
+                            <div className="flex items-center gap-2 text-[13px] font-[600] text-slate-800">
+                                <Filter size={14} /> Filters (0)
+                            </div>
+                            <button onClick={clearAllFilters} className="text-[12px] text-primary font-[500] hover:underline cursor-pointer focus:outline-none">Clear all</button>
+                        </div>
+
+                        <FilterSection title="Category" defaultOpen={false}>
+                            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                                {categoryOptions.map((cat) => (
+                                    <Checkbox
+                                        key={cat}
+                                        label={cat}
+                                        checked={selectedCategory === cat}
+                                        onChange={() => setSelectedCategory(cat)}
+                                        type="radio"
+                                    />
+                                ))}
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Subcategory" defaultOpen={false}>
+                            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                                {['Software Development', 'Web Design', 'Data Entry', 'HR Management', 'Sales & Marketing', 'Customer Support', 'Graphic Design', 'Finance', 'Engineering'].map((sub) => (
+                                    <Checkbox key={sub} label={sub} checked={false} onChange={() => { }} />
+                                ))}
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Date posted">
+                            <div className="flex flex-col gap-1.5">
+                                {['All', 'Last 24 hours', 'Last 3 days', 'Last 7 days'].map((label, idx) => (
+                                    <Checkbox key={label} label={label} type="radio" checked={idx === 0} onChange={() => { }} />
+                                ))}
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Salary">
+                            <div className="text-[12px] text-slate-500 mb-2 font-[400]">Minimum monthly salary</div>
+                            <div className="relative pt-2 pb-2 px-1">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="150000"
+                                    step="5000"
+                                    value={salaryMin === "Min" ? 0 : salaryMin}
+                                    onChange={(e) => setSalaryMin(e.target.value)}
+                                    className="w-full h-[4px] bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-[11px] font-[600] text-slate-500">₹0</span>
+                                    <span className="text-[12px] font-[700] text-[#064E3B] bg-[#064E3B]/10 px-2 py-0.5 rounded shadow-sm border border-[#064E3B]/20">
+                                        ₹{salaryMin === "Min" ? "0" : Number(salaryMin).toLocaleString()}
+                                    </span>
+                                    <span className="text-[11px] font-[600] text-slate-500">₹1.5L+</span>
+                                </div>
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Work Mode" defaultOpen={false}>
+                            <div className="flex flex-col gap-1.5">
+                                {['Work from home', 'Work from office', 'Work from field'].map((label, idx) => (
+                                    <Checkbox key={label} label={label} checked={false} onChange={() => { }} />
+                                ))}
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Work Type">
+                            <div className="flex flex-col gap-1.5">
+                                {['Full time', 'Part time', 'Internship'].map((label) => (
+                                    <Checkbox key={label} label={label} checked={jobTypes.includes(label)} onChange={() => handleCheckboxChange(setJobTypes, jobTypes, label)} />
+                                ))}
+                            </div>
+                        </FilterSection>
+
+                        <FilterSection title="Sort By">
+                            <div className="flex flex-col gap-1.5">
+                                {['Relevant', 'Salary - High to low', 'Date posted - New to Old'].map((label, idx) => (
+                                    <Checkbox key={label} label={label} type="radio" checked={idx === 0} onChange={() => { }} />
+                                ))}
+                            </div>
+                        </FilterSection>
+                    </aside>
+
+
+                    {/* --- MIDDLE CONTENT --- */}
+                    <main className="flex-1 w-full min-w-0 flex flex-col">
+                        <div className="lg:hidden mb-4 flex justify-between items-center">
+                            <button onClick={() => setShowMobileFilters(true)} className="flex items-center gap-2 text-[13px] font-[600] text-slate-700 bg-white px-3 py-1.5 rounded-[6px] border border-slate-200 shadow-sm">
+                                <Filter size={14} /> Filters
+                            </button>
+                        </div>
+
+                        {/* Job List */}
+                        <div className="grid gap-3 grid-cols-1">
+                            {loading ? (
+                                [...Array(6)].map((_, i) => (
+                                    <div key={i} className="bg-white rounded-[12px] h-[160px] p-4 border border-slate-200 animate-pulse flex flex-col justify-between">
+                                        <div className="flex gap-4">
+                                            <div className="w-10 h-10 bg-slate-100 rounded"></div>
+                                            <div className="flex-1 space-y-2"><div className="h-4 bg-slate-100 w-1/2 rounded"></div><div className="h-3 bg-slate-100 w-1/4 rounded"></div></div>
                                         </div>
-                                    )}
+                                    </div>
+                                ))
+                            ) : jobs.length > 0 ? (
+                                jobs.slice((currentPage - 1) * jobsPerPage, currentPage * jobsPerPage).map((job, index) => (
+                                    <JobCard key={job.id || job._id || index} job={job} index={index} viewMode={'list'} />
+                                ))
+                            ) : (
+                                <div className="py-20 text-center bg-white rounded-[12px] border border-slate-200 shadow-sm">
+                                    <Search size={40} className="text-slate-300 mx-auto mb-4" />
+                                    <h3 className="text-[16px] font-[600] text-slate-900 mb-2">No jobs matched</h3>
+                                    <button onClick={clearAllFilters} className="text-[13px] text-primary font-[500] hover:underline">Clear all filters</button>
                                 </div>
-                            </div>
-
-                            <div className="flex items-center bg-white rounded-lg p-1 border border-slate-200">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    <Grid size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    <List size={18} />
-                                </button>
-                            </div>
+                            )}
                         </div>
-                    </div>
 
-                    {/* Job Grid */}
-                    <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
-                        {loading ? (
-                            [...Array(6)].map((_, i) => (
-                                <div key={i} className="bg-white rounded-[24px] h-[350px] p-6 border border-slate-100 shadow-sm animate-pulse flex flex-col gap-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-xl"></div>
-                                        <div className="w-6 h-6 bg-slate-100 rounded-md"></div>
-                                    </div>
-                                    <div className="space-y-2 mb-4">
-                                        <div className="w-3/4 h-6 bg-slate-100 rounded-md"></div>
-                                        <div className="w-1/2 h-4 bg-slate-100 rounded-md"></div>
-                                    </div>
-                                    <div className="w-1/3 h-5 bg-slate-100 rounded-md mb-6"></div>
-                                    <div className="flex gap-2 mb-6">
-                                        <div className="w-16 h-6 bg-slate-100 rounded-md"></div>
-                                        <div className="w-16 h-6 bg-slate-100 rounded-md"></div>
-                                    </div>
-                                    <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-50">
-                                        <div className="w-20 h-6 bg-slate-100 rounded-md"></div>
-                                        <div className="w-24 h-9 bg-slate-100 rounded-xl"></div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : jobs.length > 0 ? (
-                            jobs.map((job, index) => (
-                                <div key={job.id || job._id || index} className={viewMode === 'list' ? "w-full" : ""}>
-                                    <JobCard job={job} index={index} />
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-32 text-center bg-white rounded-[24px] border border-slate-200 border-dashed">
-                                <div className="inline-flex bg-slate-50 p-6 rounded-full mb-6">
-                                    <Search size={40} className="text-slate-300" />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">No jobs found matching filters</h3>
-                                <p className="text-slate-500 mb-8 max-w-md mx-auto">
-                                    Try adjusting your filters or search keywords to find what you are looking for.
-                                </p>
+                        {/* Pagination Component */}
+                        {jobs.length > 0 && Math.ceil(jobs.length / jobsPerPage) > 1 && (
+                            <div className="mt-8 mb-4 flex justify-center items-center gap-2">
                                 <button
-                                    onClick={clearAllFilters}
-                                    className="px-8 py-3 bg-[#F0FDFA] text-[#0D9488] font-bold rounded-xl hover:bg-teal-100 transition-all border border-[#0D9488]/20"
+                                    onClick={() => {
+                                        setCurrentPage(prev => Math.max(prev - 1, 1));
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    disabled={currentPage === 1}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-[6px] transition-colors ${currentPage === 1 ? 'text-slate-300 cursor-not-allowed bg-transparent' : 'text-slate-500 hover:bg-white bg-white border border-slate-200 shadow-sm'}`}
                                 >
-                                    Clear all filters
+                                    <ChevronDown size={14} className="rotate-90" />
+                                </button>
+
+                                {[...Array(Math.ceil(jobs.length / jobsPerPage))].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            setCurrentPage(i + 1);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-[6px] text-[13px] font-[600] transition-colors ${currentPage === i + 1 ? 'bg-primary text-white shadow-sm' : 'bg-transparent text-slate-600 hover:bg-white hover:shadow-sm'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentPage(prev => Math.min(prev + 1, Math.ceil(jobs.length / jobsPerPage)));
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    disabled={currentPage === Math.ceil(jobs.length / jobsPerPage)}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-[6px] transition-colors ${currentPage === Math.ceil(jobs.length / jobsPerPage) ? 'text-slate-300 cursor-not-allowed bg-transparent' : 'text-slate-500 hover:bg-white bg-white border border-slate-200 shadow-sm'}`}
+                                >
+                                    <ChevronDown size={14} className="-rotate-90" />
                                 </button>
                             </div>
                         )}
-                    </div>
+                    </main>
 
-                </main>
+                    {/* --- RIGHT SIDEBAR BANNER --- */}
+                    <aside className="hidden xl:block w-[300px] shrink-0 sticky top-24 self-start">
+                        <div className="bg-[#F0FDF4] rounded-[16px] border border-[#DCFCE7] overflow-hidden relative shadow-sm h-fit">
+                            <div className="p-5 pb-20">
+                                <h3 className="text-[18px] font-[700] text-teal-900 mb-4 leading-snug tracking-tight">Get Hired Faster with<br />Uliyar Verified Network</h3>
+                                <ul className="text-left text-[13px] text-teal-800 font-[500] space-y-3 mb-6 relative z-10">
+                                    <li className="flex items-start gap-2.5">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1" />
+                                        Verified Employers Only
+                                    </li>
+                                    <li className="flex items-start gap-2.5">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1" />
+                                        Direct WhatsApp Connect
+                                    </li>
+                                    <li className="flex items-start gap-2.5">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1" />
+                                        100% Free for Workers
+                                    </li>
+                                </ul>
+
+                                {/* UI Mockup Image Placeholders (abstracted) */}
+                                <div className="bg-white rounded-[12px] p-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 w-full relative z-10 mx-auto h-[180px] overflow-hidden -mb-10">
+                                    <div className="w-full flex justify-center mb-3"><div className="w-12 h-1 bg-slate-200 rounded-full" /></div>
+                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100"></div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-2.5 w-3/4 bg-slate-200 rounded"></div>
+                                            <div className="h-2 w-1/2 bg-slate-100 rounded"></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="h-10 w-full bg-slate-50 border border-slate-100 rounded-[8px]"></div>
+                                        <div className="h-10 w-full bg-slate-50 border border-slate-100 rounded-[8px]"></div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+                                </div>
+                            </div>
+
+                            <div className="absolute bottom-4 left-4 right-4 z-20">
+                                <button className="w-full bg-primary hover:bg-teal-700 text-white font-[600] text-[14px] py-2.5 rounded-[8px] transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                    Setup profile <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </div>
     );

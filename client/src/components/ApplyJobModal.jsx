@@ -383,7 +383,7 @@ const ApplyJobModal = ({ job, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
             <div className="bg-white w-full max-w-[500px] rounded-[24px] shadow-2xl relative z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] max-h-[700px]">

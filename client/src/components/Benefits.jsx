@@ -1,14 +1,16 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Benefits = () => {
+    const { t } = useTranslation();
     return (
-        <div className="py-24 bg-slate-50 min-h-screen flex items-center">
+        <div className="py-24 bg-slate-50 min-h-screen flex items-center" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', letterSpacing: '-0.02em' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h2 className="text-sm font-bold text-gray-800 tracking-wide mb-3">Benefits</h2>
-                    <h3 className="text-4xl md:text-5xl font-medium text-gray-900 mb-6">What you gain here</h3>
-                    <p className="text-gray-600 text-lg">
+                    <h2 className="text-primary font-bold text-[12px] tracking-wider uppercase mb-3">{t("Benefits")}</h2>
+                    <h3 className="text-4xl md:text-5xl font-[700] leading-[1.2] text-slate-800 mb-6">What you gain here</h3>
+                    <p className="text-[17px] text-slate-600 font-[500]">
                         For workers seeking steady employment and better opportunities
                     </p>
                 </div>
@@ -34,10 +36,10 @@ const Benefits = () => {
                                 <span className="w-8 h-1 bg-primary rounded-full"></span>
                                 <h4 className="text-primary font-bold text-sm uppercase tracking-wider">For Workers</h4>
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
+                            <h3 className="text-3xl font-[700] leading-[1.2] text-slate-800 mb-4">
                                 Find work without the runaround
                             </h3>
-                            <p className="text-slate-600 leading-relaxed mb-6">
+                            <p className="text-[16px] font-[500] text-slate-600 leading-relaxed mb-6">
                                 Join thousands of skilled professionals finding daily opportunities.
                             </p>
 
@@ -77,10 +79,10 @@ const Benefits = () => {
                                 <span className="w-8 h-1 bg-blue-600 rounded-full"></span>
                                 <h4 className="text-blue-600 font-bold text-sm uppercase tracking-wider">For Employers</h4>
                             </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">
+                            <h3 className="text-2xl font-[700] leading-[1.2] text-slate-800 mb-4">
                                 Hire skilled talent fast
                             </h3>
-                            <p className="text-slate-600 leading-relaxed mb-6">
+                            <p className="text-[16px] font-[500] text-slate-600 leading-relaxed mb-6">
                                 Eliminate friction in your hiring process.
                             </p>
 

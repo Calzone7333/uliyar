@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Briefcase, Building, Loader, Phone, ArrowRight, ShieldCheck } from 'lucide-react';
+import { X, Mail, Lock, User, Briefcase, Building, Loader, Phone, ArrowRight, ShieldCheck, ChevronDown, Globe } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -141,14 +141,14 @@ const AuthModal = ({ isOpen, onClose, initialView = 'login', initialRole = 'cand
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
                 {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]"
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                 />
 
                 {/* Modal Content */}
@@ -156,108 +156,112 @@ const AuthModal = ({ isOpen, onClose, initialView = 'login', initialRole = 'cand
                     initial={{ opacity: 0, scale: 0.98, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98, y: 10 }}
-                    className="relative w-full max-w-[380px] bg-white rounded-[2rem] shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh] border border-slate-100 no-scrollbar"
+                    className="relative w-full max-w-[700px] min-h-[450px] md:h-[500px] bg-white rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden border border-slate-100"
                 >
-                    {/* Close Button */}
+                    {/* Close Button Mobile/Tablet */}
                     <button
                         onClick={onClose}
-                        className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all z-10"
+                        className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-full transition-colors z-20"
                     >
-                        <X size={18} />
+                        <X size={20} />
                     </button>
 
-                    <div className="p-6">
-                        {/* Header */}
-                        <div className="text-center mb-6 pt-2">
-                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                                {view === 'login' ? 'Welcome Back' : view === 'verify' ? 'Verify OTP' : 'Create Account'}
+                    {/* Left Side Image Panel */}
+                    <div className="hidden md:flex md:w-[45%] p-2">
+                        <div className="relative w-full h-full rounded-[1.5rem] overflow-hidden bg-slate-900 border border-slate-900/10">
+                            <img
+                                src={registerData.role === 'employer'
+                                    ? "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1500&auto=format&fit=crop"
+                                    : "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1500&auto=format&fit=crop"}
+                                alt="Contextual Login Background"
+                                className="absolute inset-0 w-full h-full object-cover opacity-90 mix-blend-screen"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-black/30"></div>
+
+                            <div className="relative z-10 w-full h-full flex flex-col justify-between p-8">
+                                <div className="flex justify-between items-center text-white">
+                                    <span className="font-bold text-sm tracking-tight text-white/90">Uliyar Works</span>
+                                    <button
+                                        onClick={() => setView(view === 'login' ? 'register' : 'login')}
+                                        className="text-[11px] font-bold border border-white/20 rounded-full py-1.5 px-4 hover:bg-white/10 transition-colors backdrop-blur-sm"
+                                    >
+                                        {view === 'login' ? 'Sign Up' : 'Log In'}
+                                    </button>
+                                </div>
+
+                                <div className="flex justify-between items-end text-white">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 overflow-hidden shadow-lg shadow-black/20">
+                                            {registerData.role === 'employer' ? <Building size={18} className="text-white" /> : <Briefcase size={18} className="text-white" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm tracking-tight">{registerData.role === 'employer' ? "Find Top Talent" : "Grow Your Career"}</p>
+                                            <p className="text-[11px] text-white/70 font-medium">{registerData.role === 'employer' ? "Connect with skilled workers & manage team" : "Connect with top employers"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 cursor-pointer transition-colors backdrop-blur-sm"><ArrowRight className="scale-x-[-1]" size={14} /></div>
+                                        <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 cursor-pointer transition-colors backdrop-blur-sm"><ArrowRight size={14} /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Side Form Panel */}
+                    <div className="w-full md:w-[55%] flex flex-col p-6 md:p-8 relative overflow-y-auto no-scrollbar">
+
+                        {/* Form Welcome Header */}
+                        <div className="mb-6 text-center">
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1.5">
+                                {view === 'verify' ? 'Verify OTP' : (registerData.role === 'employer' ? (view === 'login' ? 'Employer / Admin' : 'Join as Employer') : (view === 'login' ? 'Hi Worker' : 'Join as Worker'))}
                             </h2>
-                            <p className="text-slate-500 mt-1 text-[13px] font-medium">
-                                {view === 'login' ? `Sign in as ${registerData.role === 'employer' ? 'Employer' : 'Worker'}` : view === 'verify' ? `OTP sent to ${verificationData.email}` : 'Join our community'}
+                            <p className="text-slate-500 text-[13px] font-medium">
+                                {view === 'verify' ? `OTP sent to ${verificationData.email}` : 'Welcome to Uliyar platform'}
                             </p>
                         </div>
 
-                        {view !== 'verify' && (
-                            <>
-                                {/* Role Selection Tabs */}
-                                <div className="flex bg-slate-50 p-1 rounded-[14px] mb-5 border border-slate-100">
-                                    <button
-                                        type="button"
-                                        onClick={() => setRegisterData({ ...registerData, role: 'candidate' })}
-                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${registerData.role === 'candidate' ? 'bg-white shadow-sm text-primary border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        <User size={12} /> Worker
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setRegisterData({ ...registerData, role: 'employer' })}
-                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${registerData.role === 'employer' ? 'bg-white shadow-sm text-primary border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        <Briefcase size={12} /> Employer
-                                    </button>
-                                </div>
+                        <form onSubmit={view === 'login' ? handleLoginSubmit : view === 'verify' ? handleVerifySubmit : handleRegisterSubmit} className="space-y-4 flex-1 flex flex-col max-w-[320px] mx-auto w-full">
 
-                                <div className="flex justify-center mb-4 scale-90">
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={() => setError('Google Login Failed')}
-                                        useOneTap
-                                        theme="outline"
-                                        shape="pill"
-                                        width="250"
-                                    />
-                                </div>
-
-                                <div className="relative flex items-center gap-3 mb-5">
-                                    <div className="flex-grow border-t border-slate-50"></div>
-                                    <span className="text-slate-300 text-[9px] font-bold uppercase tracking-widest">or continue with email</span>
-                                    <div className="flex-grow border-t border-slate-50"></div>
-                                </div>
-                            </>
-                        )}
-
-                        <form onSubmit={view === 'login' ? handleLoginSubmit : view === 'verify' ? handleVerifySubmit : handleRegisterSubmit} className="space-y-3.5">
-                            {view === 'register' && (
-                                <>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                            <User className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                        </div>
+                            {/* Inputs */}
+                            <div className="space-y-3.5 flex-1 w-full">
+                                {view === 'register' && (
+                                    <>
                                         <input
                                             type="text"
                                             required
-                                            className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all placeholder:text-slate-400"
+                                            className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-[10px] text-[13px] font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-400"
                                             placeholder="Full Name"
                                             value={registerData.name}
                                             onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                                         />
-                                    </div>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                            <Phone className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                        </div>
                                         <input
                                             type="tel"
                                             required
-                                            className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all placeholder:text-slate-400"
+                                            className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-[10px] text-[13px] font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-400"
                                             placeholder="Mobile Number"
                                             value={registerData.mobile}
                                             onChange={(e) => setRegisterData({ ...registerData, mobile: e.target.value })}
                                         />
-                                    </div>
-                                </>
-                            )}
+                                        {registerData.role === 'employer' && (
+                                            <input
+                                                type="text"
+                                                required
+                                                className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-[10px] text-[13px] font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-400"
+                                                placeholder="Company Name"
+                                                value={registerData.companyName || ''}
+                                                onChange={(e) => setRegisterData({ ...registerData, companyName: e.target.value })}
+                                            />
+                                        )}
+                                    </>
+                                )}
 
-                            {view !== 'verify' && (
-                                <>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                            <Mail className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                        </div>
+                                {view !== 'verify' && (
+                                    <>
                                         <input
                                             type="email"
                                             required
-                                            className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all placeholder:text-slate-400"
+                                            className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-[10px] text-[13px] font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-400"
                                             placeholder="Email address"
                                             value={view === 'login' ? loginData.email : registerData.email}
                                             onChange={(e) => view === 'login'
@@ -265,16 +269,10 @@ const AuthModal = ({ isOpen, onClose, initialView = 'login', initialRole = 'cand
                                                 : setRegisterData({ ...registerData, email: e.target.value })
                                             }
                                         />
-                                    </div>
-
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                            <Lock className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                        </div>
                                         <input
                                             type="password"
                                             required
-                                            className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all placeholder:text-slate-400"
+                                            className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-[10px] text-[13px] font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-400"
                                             placeholder="Password"
                                             value={view === 'login' ? loginData.password : registerData.password}
                                             onChange={(e) => view === 'login'
@@ -282,86 +280,99 @@ const AuthModal = ({ isOpen, onClose, initialView = 'login', initialRole = 'cand
                                                 : setRegisterData({ ...registerData, password: e.target.value })
                                             }
                                         />
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )}
 
-                            {view === 'verify' && (
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                        <ShieldCheck className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                    </div>
+                                {view === 'verify' && (
                                     <input
                                         type="text"
                                         required
                                         maxLength="4"
-                                        className="block w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all placeholder:text-slate-300"
+                                        className="block w-full px-4 py-4 bg-white border border-slate-200 rounded-[12px] text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-slate-300"
                                         placeholder="••••"
                                         value={verificationData.otp}
                                         onChange={(e) => setVerificationData({ ...verificationData, otp: e.target.value })}
                                         autoFocus
                                     />
-                                </div>
-                            )}
+                                )}
 
-                            {view === 'login' && (
-                                <div className="flex justify-end pt-0.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => { onClose(); navigate('/forgot-password'); }}
-                                        className="text-[11px] font-bold text-primary hover:text-teal-700 transition-colors"
-                                    >
-                                        Forgot Password?
-                                    </button>
-                                </div>
-                            )}
+                                {view === 'login' && (
+                                    <div className="flex justify-end pt-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => { onClose(); navigate('/forgot-password'); }}
+                                            className="text-[11px] font-bold text-primary hover:text-teal-700 transition-colors"
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
+                                    initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-red-50 text-red-500 text-[11px] p-2.5 rounded-xl border border-red-100 text-center font-bold"
+                                    className="text-red-500 text-[11px] text-center font-bold"
                                 >
                                     {error}
                                 </motion.div>
                             )}
 
+                            {/* Or Divider & Google Logic */}
+                            {view !== 'verify' && (
+                                <div className="mt-1 mb-1">
+                                    <div className="relative flex items-center gap-3 mb-4">
+                                        <div className="flex-grow border-t border-slate-200"></div>
+                                        <span className="text-slate-800 text-[10px] font-bold lowercase tracking-widest bg-white">or</span>
+                                        <div className="flex-grow border-t border-slate-200"></div>
+                                    </div>
+
+                                    <div className="flex justify-center mb-5 hover:opacity-90 transition-opacity rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleSuccess}
+                                            onError={() => setError('Google Login Failed')}
+                                            useOneTap
+                                            theme="outline"
+                                            size="large"
+                                            width="320"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Main Button */}
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full flex justify-center items-center gap-2 py-3 px-4 text-[13px] font-bold rounded-2xl text-white bg-primary hover:bg-teal-700 transition-all shadow-md active:scale-[0.98]"
+                                className={`w-full flex justify-center items-center gap-2 py-3.5 px-4 text-[13px] font-bold rounded-full text-white transition-all shadow-md mt-auto bg-primary hover:bg-teal-700 shadow-primary/20`}
                             >
                                 {isSubmitting ? <Loader size={16} className="animate-spin" /> : (
-                                    view === 'login' ? <>Sign In <ArrowRight size={14} /></> : view === 'verify' ? 'Confirm OTP' : 'Verify & Join'
+                                    view === 'login' ? 'Login' : view === 'verify' ? 'Confirm OTP' : 'Sign Up'
                                 )}
                             </button>
 
+                            {/* Switch Modes */}
                             {view !== 'verify' && (
-                                <div className="text-center pt-2">
-                                    <p className="text-[12px] text-slate-400 font-medium">
-                                        {view === 'login' ? "New to Uliyar?" : "Already a member?"}{' '}
+                                <div className="text-center pt-1 pb-1">
+                                    <p className="text-[12px] text-slate-500 font-medium tracking-tight">
+                                        {view === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
                                         <button
                                             type="button"
                                             onClick={() => setView(view === 'login' ? 'register' : 'login')}
-                                            className="font-bold text-primary hover:text-teal-700 underline underline-offset-4 decoration-primary/20"
+                                            className="font-bold text-primary hover:text-teal-700 transition-colors"
                                         >
-                                            {view === 'login' ? 'Create Account' : 'Log In'}
+                                            {view === 'login' ? 'Sign up' : 'Login'}
                                         </button>
                                     </p>
+                                    {registerData.role === 'employer' && view === 'register' && (
+                                        <p className="text-[10px] text-slate-400 font-medium tracking-tight mt-1">
+                                            Admin accounts cannot sign up here. Please <button type="button" onClick={() => setView('login')} className="underline text-primary">login</button>.
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
-                            {view === 'verify' && (
-                                <div className="text-center pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('register')}
-                                        className="text-[12px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
-                                    >
-                                        Back to Register
-                                    </button>
-                                </div>
-                            )}
                         </form>
                     </div>
                 </motion.div>

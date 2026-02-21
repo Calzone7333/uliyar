@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, Target, Shield, Award, CheckCircle, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const StatCard = ({ number, label, icon: Icon }) => (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform duration-300">
@@ -12,12 +13,13 @@ const StatCard = ({ number, label, icon: Icon }) => (
 );
 
 const AboutUs = () => {
+    const { t } = useTranslation();
     return (
         <div className="bg-slate-50 min-h-screen">
             {/* Hero Section */}
             <div className="bg-slate-950 pt-24 pb-20 px-4 sm:px-6 lg:px-8 text-center text-white">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl md:text-6xl font-bold mb-6">Empowering Blue-Collar Professionals</h1>
+                    <h1 className="text-4xl md:text-6xl font-bold mb-6">{t("Empowering Blue-Collar Professionals")}</h1>
                     <p className="text-lg md:text-xl text-slate-300 opacity-90 max-w-2xl mx-auto">
                         We are on a mission to organize the unorganized sector, providing dignity, stability, and growth opportunities to millions of skilled workers.
                     </p>
@@ -86,7 +88,7 @@ const AboutUs = () => {
                             <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center text-white mb-6">
                                 <Target size={28} />
                             </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-4">Our Mission</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-4">{t("Our Mission")}</h3>
                             <p className="text-slate-600 leading-relaxed">
                                 To dignify labor and create sustainable livelihoods for blue-collar workers by connecting them with opportunities through technology, transparency, and trust. We aim to remove intermediaries and ensure fair wages for every hour of hard work.
                             </p>
@@ -95,7 +97,7 @@ const AboutUs = () => {
                             <div className="w-14 h-14 bg-primary/20 rounded-xl flex items-center justify-center text-primary mb-6">
                                 <Shield size={28} />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-4">Our Vision</h3>
+                            <h3 className="text-2xl font-bold text-white mb-4">{t("Our Vision")}</h3>
                             <p className="text-slate-300 leading-relaxed">
                                 A world where every skilled worker is respected, valued, and has access to consistent income. We envision an organized, efficient ecosystem where quality workmanship is recognized and rewarded instantly.
                             </p>
@@ -106,7 +108,7 @@ const AboutUs = () => {
 
             {/* CTA */}
             <div className="py-24 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto">
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-6">Ready to Join the Revolution?</h2>
+                <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-6">{t("Ready to Join the Revolution?")}</h2>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="/find-jobs" className="px-8 py-4 bg-primary text-white rounded-xl font-bold hover:bg-teal-700 transition-colors shadow-lg shadow-teal-900/20">
                         Join as a Worker

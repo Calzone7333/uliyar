@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import './i18n.js';
 import './index.css'
 import App from './App.jsx'
 import { API_BASE_URL } from './config'

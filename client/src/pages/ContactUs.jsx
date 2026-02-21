@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ContactUs = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -25,8 +27,8 @@ const ContactUs = () => {
             <div className="bg-slate-950 pt-32 pb-20 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(#0d9488 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                    <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block">Get in Touch</span>
-                    <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">We're Here to Help</h1>
+                    <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block">{t("Get in Touch")}</span>
+                    <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">{t("We're Here to Help")}</h1>
                     <p className="text-xl text-slate-400 max-w-2xl mx-auto font-medium">
                         Have questions about hiring or finding a job? Our team is ready to assist you.
                     </p>
@@ -39,7 +41,7 @@ const ContactUs = () => {
                             <Phone size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900">Phone Support</h3>
+                            <h3 className="font-bold text-slate-900">{t("Phone Support")}</h3>
                             <p className="text-slate-600 text-sm mb-1">Mon-Fri from 9am to 6pm</p>
                             <a href="tel:+919655771091" className="text-primary font-medium hover:underline">+91 96557 71091</a>
                         </div>
@@ -50,7 +52,7 @@ const ContactUs = () => {
                             <Mail size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900">Email Us</h3>
+                            <h3 className="font-bold text-slate-900">{t("Email Us")}</h3>
                             <p className="text-slate-600 text-sm mb-1">We'll respond within 24 hours</p>
                             <a href="mailto:info@uliyar.com" className="text-primary font-medium hover:underline">info@uliyar.com</a>
                         </div>
@@ -61,7 +63,7 @@ const ContactUs = () => {
                             <MapPin size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900">Office</h3>
+                            <h3 className="font-bold text-slate-900">{t("Office")}</h3>
                             <p className="text-slate-600 text-sm">
                                 3/32, 1st Main Road, Ayyappa Nagar, Virugambakkam, Chennai-600092
                             </p>

@@ -1,7 +1,56 @@
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext';
+import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
+
+const Typewriter = ({ text, typingSpeed = 80, pauseTime = 3000, deleteSpeed = 40 }) => {
+    const [currentText, setCurrentText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        // Reset state entirely if language/translation changes abruptly
+        setCurrentText('');
+        setIsDeleting(false);
+    }, [text]);
+
+    useEffect(() => {
+        let timeout;
+
+        if (!isDeleting && currentText.length < text.length) {
+            // Typing forward
+            timeout = setTimeout(() => {
+                setCurrentText(text.slice(0, currentText.length + 1));
+            }, typingSpeed);
+        } else if (!isDeleting && currentText.length === text.length) {
+            // Pause when fully typed
+            timeout = setTimeout(() => {
+                setIsDeleting(true);
+            }, pauseTime);
+        } else if (isDeleting && currentText.length > 0) {
+            // Deleting backwards
+            timeout = setTimeout(() => {
+                setCurrentText(text.slice(0, currentText.length - 1));
+            }, deleteSpeed);
+        } else if (isDeleting && currentText.length === 0) {
+            // Slight pause after complete deletion before restarting
+            timeout = setTimeout(() => {
+                setIsDeleting(false);
+            }, 500);
+        }
+
+        return () => clearTimeout(timeout);
+    }, [currentText, isDeleting, text, typingSpeed, pauseTime, deleteSpeed]);
+
+    return (
+        <span>
+            {currentText}
+            <span className="animate-[pulse_1s_ease-in-out_infinite] border-r-[3px] border-primary ml-0.5 h-[0.9em] inline-block align-middle -translate-y-[2px]"></span>
+        </span>
+    );
+};
 
 const Hero = () => {
+    const { t } = useTranslation();
     // Base sets of images
     // Base sets of images
     const set1 = [
@@ -29,28 +78,31 @@ const Hero = () => {
     const { openLogin, openRegister } = useUI();
 
     return (
-        <div className="bg-secondary text-slate-900 overflow-hidden relative pt-4 pb-20 lg:pb-32">
+        <div
+            className="bg-secondary text-slate-900 overflow-hidden relative pt-4 pb-20 lg:pb-32"
+            style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', letterSpacing: '-0.02em' }}
+        >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-[600px]">
 
                 {/* Left Content */}
-                <div className="flex flex-col justify-center z-10 pt-0 lg:pt-0">
-                    <div className="inline-flex self-start items-center px-5 py-2.5 bg-white rounded-full mb-8 border border-blue-100 shadow-sm">
-                        <span className="text-primary font-bold text-sm tracking-wide uppercase">
+                <div className="flex flex-col justify-center z-10 -mt-16 lg:-mt-32 xl:-mt-40">
+                    <div className="inline-flex self-start items-center px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full mb-6 md:mb-8 border border-blue-100 shadow-sm">
+                        <span className="text-primary font-bold text-[11px] md:text-xs tracking-wider uppercase">
                             # India’s Trusted Platform for Salary-Based Blue-Collar Jobs
                         </span>
                     </div>
 
                     <div className="space-y-4 mb-10">
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
-                            Find Jobs &
+                        <h1 className="text-4xl md:text-5xl lg:text-5xl font-[700] leading-[1.2] text-slate-800">
+                            {t("Find Jobs and")}
                         </h1>
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-primary">
-                            Hire Skilled Workers Across India
+                        <h1 className="text-4xl md:text-5xl lg:text-5xl font-[700] leading-[1.2] text-primary min-h-[1.2em]">
+                            <Typewriter text={t("Hire Skilled Workers Across India")} />
                         </h1>
                     </div>
 
-                    <div className="pl-6 border-l-4 border-primary max-w-xl">
-                        <p className="text-lg text-slate-600 leading-relaxed font-medium">
+                    <div className="pl-6 border-l-4 border-primary max-w-xl opacity-90">
+                        <p className="text-[17px] text-slate-600 leading-relaxed font-[500]">
                             Upload your resume and connect with employers looking for
                             skilled trades. Post a job and hire the workers you need, fast.
                         </p>
@@ -58,15 +110,15 @@ const Hero = () => {
                     <div className="mt-10 flex flex-wrap gap-4">
                         <button
                             onClick={() => openRegister('candidate')}
-                            className="px-8 py-4 bg-primary hover:bg-teal-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-500/20"
+                            className="px-8 py-4 bg-primary hover:bg-teal-700 text-white rounded-full font-[600] text-[16px] transition-all shadow-lg shadow-primary/20"
                         >
-                            I am a worker
+                            {t("I am a worker")}
                         </button>
                         <button
                             onClick={() => openLogin('employer')}
-                            className="px-8 py-4 bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-xl font-bold text-lg transition-all shadow-sm"
+                            className="px-8 py-4 bg-white hover:bg-gray-50 text-slate-700 border border-slate-200 rounded-full font-[600] text-[16px] transition-all shadow-sm"
                         >
-                            I am an employer
+                            {t("I am an employer")}
                         </button>
                     </div>
                 </div>

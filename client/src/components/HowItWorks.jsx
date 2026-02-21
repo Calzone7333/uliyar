@@ -1,7 +1,9 @@
 import React from 'react';
 import { Upload, Monitor, Briefcase } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const HowItWorks = () => {
+    const { t } = useTranslation();
     const steps = [
         {
             title: "For job seekers",
@@ -24,12 +26,12 @@ const HowItWorks = () => {
     ];
 
     return (
-        <div className="py-24 bg-white border-t border-gray-100">
+        <div className="py-24 bg-white border-t border-gray-100" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', letterSpacing: '-0.02em' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-20">
-                    <h2 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-2">PROCESS</h2>
-                    <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">How it works, step by step</h3>
-                    <p className="text-gray-500">
+                    <h2 className="text-primary font-bold text-[12px] tracking-wider uppercase mb-3">{t("PROCESS")}</h2>
+                    <h3 className="text-4xl md:text-5xl font-[700] leading-[1.2] text-slate-800 mb-6">How it works, step by step</h3>
+                    <p className="text-[17px] text-slate-600 font-[500]">
                         Success is just a few clicks away. We've streamlined the process for both workers and employers.
                     </p>
                 </div>
@@ -41,9 +43,9 @@ const HowItWorks = () => {
                                 <step.icon size={48} strokeWidth={1.5} />
                             </div>
 
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h4>
-                            <p className="text-primary text-sm font-semibold mb-4">{step.subtitle}</p>
-                            <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+                            <h4 className="text-xl font-[700] text-slate-800 mb-2">{step.title}</h4>
+                            <p className="text-primary text-[14px] font-[600] mb-4">{step.subtitle}</p>
+                            <p className="text-[15px] text-slate-500 font-[500] leading-relaxed max-w-xs mx-auto">
                                 {step.desc}
                             </p>
                         </div>

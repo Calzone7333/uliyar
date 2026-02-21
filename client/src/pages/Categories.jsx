@@ -6,6 +6,7 @@ import {
     Music, Scissors, ArrowRight, Briefcase
 } from 'lucide-react';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
+import { useTranslation } from 'react-i18next';
 
 const categoryIcons = {
     "Accounts, Finance, Admin & HR": Calculator,
@@ -24,18 +25,19 @@ const categoryIcons = {
 };
 
 const Categories = () => {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen bg-slate-50 py-20 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-16 relative">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full opacity-5 pointer-events-none select-none">
-                        <span className="text-[120px] md:text-[200px] font-black text-slate-900 tracking-tighter leading-none">SECTORS</span>
+                        <span className="text-[120px] md:text-[200px] font-black text-slate-900 tracking-tighter leading-none">{t("SECTORS")}</span>
                     </div>
 
-                    <span className="text-primary font-bold tracking-widest uppercase text-sm mb-4 inline-block">Explore Opportunities</span>
+                    <span className="text-primary font-bold tracking-widest uppercase text-sm mb-4 inline-block">{t("Explore Opportunities")}</span>
                     <h2 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6 relative z-10">
-                        Job Categories
+                        {t("Job Categories")}
                     </h2>
                     <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto relative z-10">
                         Discover tailored opportunities across various industries. Find the perfect role that matches your skills.

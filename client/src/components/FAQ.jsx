@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Plus, Minus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const FAQ = () => {
+    const { t } = useTranslation();
     const [openIndex, setOpenIndex] = useState(null);
 
     const faqs = [
@@ -32,11 +34,12 @@ const FAQ = () => {
     ];
 
     return (
-        <div className="py-24 bg-white">
+        <div className="py-24 bg-white" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', letterSpacing: '-0.02em' }}>
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-2">FAQ</h3>
-                    <p className="text-gray-500 text-sm max-w-lg mx-auto">
+                    <h2 className="text-primary font-bold text-[12px] tracking-wider uppercase mb-3">{t("FAQ")}</h2>
+                    <h3 className="text-4xl md:text-5xl font-[700] leading-[1.2] text-slate-800 mb-6">Frequently asked questions</h3>
+                    <p className="text-[17px] text-slate-600 font-[500] max-w-lg mx-auto">
                         Frequently asked questions about our process, pricing, and security.
                     </p>
                 </div>

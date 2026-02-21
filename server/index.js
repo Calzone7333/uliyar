@@ -76,8 +76,8 @@ app.get('/api/auth/google-client-id', (req, res) => {
 // Database Configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'hado',
-    password: 'Hadoglobal@123',
+    user: 'root',
+    password: 'root',
     database: 'uliyar_db',
     waitForConnections: true,
     connectionLimit: 10,
@@ -655,7 +655,7 @@ app.post('/api/apply', upload.fields([
 });
 
 app.get('/api/jobs', (req, res) => {
-    const { employerId, q, location, category, type } = req.query;
+    const { employerId, q, location, category, type, minSalary } = req.query;
     let sql = "SELECT * FROM jobs WHERE 1=1";
     const params = [];
 
@@ -690,6 +690,11 @@ app.get('/api/jobs', (req, res) => {
     if (type && type !== 'All Types') {
         sql += " AND type = ?";
         params.push(type);
+    }
+
+    if (minSalary && !isNaN(minSalary)) {
+        sql += " AND CAST(salary AS UNSIGNED) >= ?";
+        params.push(minSalary);
     }
 
     // Sorting Logic
