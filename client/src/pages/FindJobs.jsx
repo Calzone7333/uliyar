@@ -172,7 +172,7 @@ const FindJobs = () => {
                     )}
 
                     {/* --- LEFT SIDEBAR --- */}
-                    <aside className={`fixed inset-y-0 left-0 z-[110] w-[260px] bg-white border border-slate-200 shadow-sm rounded-none md:rounded-[8px] transform transition-transform duration-300 overflow-y-auto lg:translate-x-0 lg:static lg:p-0 lg:shadow-sm lg:overflow-visible lg:h-fit lg:shrink-0 ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <aside className={`fixed inset-y-0 left-0 z-[110] lg:z-10 w-[260px] bg-white border border-slate-200 shadow-sm rounded-none md:rounded-[8px] transform transition-transform duration-300 overflow-y-auto lg:transform-none lg:translate-x-0 lg:static lg:p-0 lg:shadow-sm lg:overflow-visible lg:h-fit lg:shrink-0 ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="flex items-center justify-between lg:hidden p-4 border-b border-slate-100">
                             <h3 className="font-[600] text-slate-800 text-[16px]">Filters</h3>
                             <button onClick={() => setShowMobileFilters(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
