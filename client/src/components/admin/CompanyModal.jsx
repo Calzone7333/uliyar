@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building2, Globe, MapPin, FileCheck, CheckCircle, XCircle } from 'lucide-react';
+import { X, Building2, Globe, MapPin, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 const CompanyModal = ({ company, onClose, onAction }) => {
@@ -63,7 +63,7 @@ const CompanyModal = ({ company, onClose, onAction }) => {
                             <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 shrink-0">
-                                        <FileCheck size={16} />
+                                        <FileText size={16} />
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800 text-xs">Business Registration</p>
@@ -85,7 +85,7 @@ const CompanyModal = ({ company, onClose, onAction }) => {
                             <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 shrink-0">
-                                        <FileCheck size={16} />
+                                        <FileText size={16} />
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800 text-xs">Personal ID Proof</p>
@@ -107,7 +107,7 @@ const CompanyModal = ({ company, onClose, onAction }) => {
                             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-600 shrink-0">
-                                        <FileCheck size={16} />
+                                        <FileText size={16} />
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800 text-xs">Verification Doc</p>
