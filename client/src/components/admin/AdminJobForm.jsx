@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Briefcase, Building2, MapPin, IndianRupee, AlignLeft, Layers, Loader, PlusCircle, FileText, Phone, Mail, Calendar, Image, Edit3, ExternalLink } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
+import ImageCropper from '../common/ImageCropper';
 
 const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
     const [jobData, setJobData] = useState({
@@ -26,6 +27,37 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
 
     const [isOtherCategory, setIsOtherCategory] = useState(false);
     const [isOtherSubCategory, setIsOtherSubCategory] = useState(false);
+    const [cropping, setCropping] = useState({
+        active: false,
+        image: null,
+        fieldName: ''
+    });
+
+    const handleFileSelect = (file, fieldName) => {
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setCropping({
+                    active: true,
+                    image: reader.result,
+                    fieldName: fieldName
+                });
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setJobData({ ...jobData, [fieldName]: file });
+        }
+    };
+
+    const handleCropDone = (croppedBlob) => {
+        const file = new File([croppedBlob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setJobData({ ...jobData, [cropping.fieldName]: file });
+        setCropping({ active: false, image: null, fieldName: '' });
+    };
+
+    const handleCropCancel = () => {
+        setCropping({ active: false, image: null, fieldName: '' });
+    };
 
     // Populate form on Edit
     React.useEffect(() => {
@@ -122,6 +154,13 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                {cropping.active && (
+                    <ImageCropper
+                        image={cropping.image}
+                        onCropDone={handleCropDone}
+                        onCropCancel={handleCropCancel}
+                    />
+                )}
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2 space-y-6">
@@ -217,8 +256,8 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
 
                                     <div className="col-span-2 grid grid-cols-2 gap-4 mt-2">
                                         <FileGroup
-                                            label="Social Media Image (Optional)"
-                                            onChange={file => setJobData({ ...jobData, socialMediaImage: file })}
+                                            label="Social Media Image"
+                                            onChange={file => handleFileSelect(file, 'socialMediaImage')}
                                             accept="image/*"
                                             required={false}
                                             existingUrl={initialData?.socialMediaImage}
@@ -226,7 +265,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                         />
                                         <FileGroup
                                             label="Newspaper Image"
-                                            onChange={file => setJobData({ ...jobData, newspaperImage: file })}
+                                            onChange={file => handleFileSelect(file, 'newspaperImage')}
                                             accept="image/*"
                                             required={true}
                                             existingUrl={initialData?.newspaperImage}
