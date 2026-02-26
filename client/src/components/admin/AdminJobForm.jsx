@@ -34,7 +34,12 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
     });
 
     const handleFileSelect = (file, fieldName) => {
-        if (file && file.type.startsWith('image/')) {
+        setJobData({ ...jobData, [fieldName]: file });
+    };
+
+    const triggerCrop = (fieldName) => {
+        const file = jobData[fieldName];
+        if (file && file instanceof File) {
             const reader = new FileReader();
             reader.onload = () => {
                 setCropping({
@@ -44,8 +49,6 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                 });
             };
             reader.readAsDataURL(file);
-        } else {
-            setJobData({ ...jobData, [fieldName]: file });
         }
     };
 
@@ -258,6 +261,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                         <FileGroup
                                             label="Social Media Image"
                                             onChange={file => handleFileSelect(file, 'socialMediaImage')}
+                                            onCrop={() => triggerCrop('socialMediaImage')}
                                             accept="image/*"
                                             required={false}
                                             existingUrl={initialData?.socialMediaImage}
@@ -266,6 +270,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                         <FileGroup
                                             label="Newspaper Image"
                                             onChange={file => handleFileSelect(file, 'newspaperImage')}
+                                            onCrop={() => triggerCrop('newspaperImage')}
                                             accept="image/*"
                                             required={true}
                                             existingUrl={initialData?.newspaperImage}
@@ -407,7 +412,7 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
     );
 };
 
-const FileGroup = ({ label, onChange, accept, required, existingUrl, selectedFile }) => {
+const FileGroup = ({ label, onChange, onCrop, accept, required, existingUrl, selectedFile }) => {
     const [preview, setPreview] = React.useState(null);
     const fileInputRef = React.useRef(null);
 
@@ -454,14 +459,23 @@ const FileGroup = ({ label, onChange, accept, required, existingUrl, selectedFil
             {preview && (
                 <div className="mt-2 relative w-full h-32 bg-slate-50 rounded-xl overflow-hidden border border-slate-200 group">
                     <img src={preview} alt="Preview" className="w-full h-full object-contain" />
-                    <button
-                        type="button"
-                        onClick={() => onChange(null)}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                        title="Remove Image"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                            type="button"
+                            onClick={onCrop}
+                            className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-1.5 hover:bg-blue-600 hover:text-white transition-colors"
+                        >
+                            <Edit3 size={12} /> Crop Image
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onChange(null)}
+                            className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                            title="Remove Image"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
             )}
             {existingUrl && !preview && <p className="text-[10px] text-slate-400 mt-1 ml-1">Upload new file to replace existing image.</p>}

@@ -15,8 +15,9 @@ import AdminJobForm from '../components/admin/AdminJobForm';
 import CandidateModal from '../components/admin/CandidateModal';
 import CompanyModal from '../components/admin/CompanyModal';
 import JobModal from '../components/admin/JobModal';
-
 import CompanyDetailsView from '../components/admin/CompanyDetailsView';
+import { exportJobsToExcel } from '../utils/exportToExcel';
+import { DownloadCloud } from 'lucide-react';
 
 const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +38,7 @@ const AdminDashboard = () => {
     const [editJob, setEditJob] = useState(null);
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '' });
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -186,6 +188,22 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleExport = async () => {
+        if (filteredAdminJobs.length === 0) {
+            alert("No data to export");
+            return;
+        }
+        setIsExporting(true);
+        try {
+            await exportJobsToExcel(filteredAdminJobs);
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to export Excel file");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredAdminJobs = adminJobs.filter(job =>
@@ -300,6 +318,14 @@ const AdminDashboard = () => {
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm shadow-sm"
                                         />
                                     </div>
+                                    <button
+                                        onClick={handleExport}
+                                        disabled={isExporting}
+                                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-emerald-200 transition-all active:scale-95 whitespace-nowrap"
+                                    >
+                                        {isExporting ? <Loader className="animate-spin" size={18} /> : <DownloadCloud size={18} />}
+                                        {isExporting ? 'Exporting...' : 'Export Data'}
+                                    </button>
                                     <button onClick={() => { setEditJob(null); setActiveTab('post_job'); }} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap">
                                         <PlusCircle size={18} /> Post New
                                     </button>

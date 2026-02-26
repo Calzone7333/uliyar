@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import ReactCrop, { centerCrop, makeAspectCrop, PixelCrop } from 'react-image-crop';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { X, Check, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 
@@ -58,6 +58,12 @@ const ImageCropper = ({ image, onCropDone, onCropCancel }) => {
         }, 'image/jpeg', 0.95);
     }
 
+    async function handleUploadOriginal() {
+        const response = await fetch(image);
+        const blob = await response.blob();
+        onCropDone(blob);
+    }
+
     return (
         <div className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4">
             <style>
@@ -100,7 +106,7 @@ const ImageCropper = ({ image, onCropDone, onCropCancel }) => {
                 <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
                     <div>
                         <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Adjust Selection</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Drag corners to crop the newspaper clipping</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Drag corners to crop or upload original image</p>
                     </div>
                     <button
                         onClick={onCropCancel}
@@ -138,12 +144,18 @@ const ImageCropper = ({ image, onCropDone, onCropCancel }) => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
                             <button
                                 onClick={onCropCancel}
-                                className="flex-1 sm:flex-none px-8 py-3 text-slate-500 font-bold text-sm tracking-tight hover:text-slate-800 transition-colors"
+                                className="px-6 py-3 text-slate-500 font-bold text-sm tracking-tight hover:text-slate-800 transition-colors"
                             >
                                 Cancel
+                            </button>
+                            <button
+                                onClick={handleUploadOriginal}
+                                className="px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 transition-all"
+                            >
+                                Upload Original
                             </button>
                             <button
                                 onClick={handleApply}
