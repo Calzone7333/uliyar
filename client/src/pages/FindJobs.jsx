@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, MapPin, ChevronDown, ChevronUp, Filter, X, Grid, List, Check, RotateCcw, Folder, ChevronRight } from 'lucide-react';
+import { Search, MapPin, ChevronDown, ChevronUp, Filter, X, Grid, List, Check, RotateCcw, Folder, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
@@ -74,7 +74,7 @@ const FindJobs = () => {
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const jobsPerPage = 15;
+    const jobsPerPage = 10;
 
     // UI Dropdowns
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -113,6 +113,8 @@ const FindJobs = () => {
 
             if (Array.isArray(data)) {
                 let filtered = data;
+                // Client-side sort fallback: Newest first
+                filtered.sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
                 setJobs(filtered);
             } else {
                 setJobs([]);
@@ -298,41 +300,73 @@ const FindJobs = () => {
                         </div>
 
                         {/* Pagination Component */}
-                        {jobs.length > 0 && Math.ceil(jobs.length / jobsPerPage) > 1 && (
-                            <div className="mt-8 mb-4 flex justify-center items-center gap-2">
+                        {jobs.length > jobsPerPage && (
+                            <div className="mt-12 mb-8 flex justify-center items-center gap-2">
                                 <button
                                     onClick={() => {
                                         setCurrentPage(prev => Math.max(prev - 1, 1));
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
                                     disabled={currentPage === 1}
-                                    className={`w-8 h-8 flex items-center justify-center rounded-[6px] transition-colors ${currentPage === 1 ? 'text-slate-300 cursor-not-allowed bg-transparent' : 'text-slate-500 hover:bg-white bg-white border border-slate-200 shadow-sm'}`}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === 1 ? 'border-slate-100 text-slate-300 cursor-not-allowed' : 'border-slate-200 text-slate-600 hover:border-primary hover:text-primary bg-white shadow-sm'}`}
                                 >
-                                    <ChevronDown size={14} className="rotate-90" />
+                                    <ChevronLeft size={18} />
                                 </button>
 
-                                {[...Array(Math.ceil(jobs.length / jobsPerPage))].map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => {
-                                            setCurrentPage(i + 1);
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }}
-                                        className={`w-8 h-8 flex items-center justify-center rounded-[6px] text-[13px] font-[600] transition-colors ${currentPage === i + 1 ? 'bg-primary text-white shadow-sm' : 'bg-transparent text-slate-600 hover:bg-white hover:shadow-sm'}`}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
+                                {(() => {
+                                    const totalPages = Math.ceil(jobs.length / jobsPerPage);
+                                    const pages = [];
+
+                                    if (totalPages <= 7) {
+                                        for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                    } else {
+                                        if (currentPage <= 4) {
+                                            for (let i = 1; i <= 5; i++) pages.push(i);
+                                            pages.push('...');
+                                            pages.push(totalPages);
+                                        } else if (currentPage >= totalPages - 3) {
+                                            pages.push(1);
+                                            pages.push('...');
+                                            for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+                                        } else {
+                                            pages.push(1);
+                                            pages.push('...');
+                                            for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+                                            pages.push('...');
+                                            pages.push(totalPages);
+                                        }
+                                    }
+
+                                    return pages.map((page, index) => (
+                                        page === '...' ? (
+                                            <span key={`ellipsis-${index}`} className="w-10 h-10 flex items-center justify-center text-slate-400">
+                                                ...
+                                            </span>
+                                        ) : (
+                                            <button
+                                                key={page}
+                                                onClick={() => {
+                                                    setCurrentPage(page);
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-lg border text-[14px] font-[600] transition-all ${currentPage === page ? 'border-primary bg-white text-primary ring-1 ring-primary shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        )
+                                    ));
+                                })()}
 
                                 <button
                                     onClick={() => {
-                                        setCurrentPage(prev => Math.min(prev + 1, Math.ceil(jobs.length / jobsPerPage)));
+                                        const totalPages = Math.ceil(jobs.length / jobsPerPage);
+                                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
                                     disabled={currentPage === Math.ceil(jobs.length / jobsPerPage)}
-                                    className={`w-8 h-8 flex items-center justify-center rounded-[6px] transition-colors ${currentPage === Math.ceil(jobs.length / jobsPerPage) ? 'text-slate-300 cursor-not-allowed bg-transparent' : 'text-slate-500 hover:bg-white bg-white border border-slate-200 shadow-sm'}`}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === Math.ceil(jobs.length / jobsPerPage) ? 'border-slate-100 text-slate-300 cursor-not-allowed' : 'border-slate-200 text-slate-600 hover:border-primary hover:text-primary bg-white shadow-sm'}`}
                                 >
-                                    <ChevronDown size={14} className="-rotate-90" />
+                                    <ChevronRight size={18} />
                                 </button>
                             </div>
                         )}

@@ -210,7 +210,7 @@ const AdminDashboard = () => {
         job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job?.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ).sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
 
     return (
         <div className="min-h-screen bg-slate-50/50 flex">
