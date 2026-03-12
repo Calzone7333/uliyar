@@ -80,13 +80,41 @@ const FindJobs = () => {
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+    const [allCategories, setAllCategories] = useState(JOB_CATEGORIES);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/job-categories`);
+                if (res.ok) {
+                    const dynamicCats = await res.json();
+                    setAllCategories(prev => {
+                        const merged = { ...prev };
+                        Object.keys(dynamicCats).forEach(cat => {
+                            if (!merged[cat]) {
+                                merged[cat] = dynamicCats[cat];
+                            } else {
+                                const subSet = new Set([...merged[cat], ...dynamicCats[cat]]);
+                                merged[cat] = Array.from(subSet);
+                            }
+                        });
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     // Data Fetching: Filter Counts (Mock or Real)
     useEffect(() => {
         // Mock fetch if needed
     }, []);
 
     // Helper: Category Options
-    const categoryOptions = useMemo(() => ["All Categories", ...Object.keys(JOB_CATEGORIES)], []);
+    const categoryOptions = useMemo(() => ["All Categories", ...Object.keys(allCategories)], [allCategories]);
 
     // Data Fetching: Jobs
     useEffect(() => {

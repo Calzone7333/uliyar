@@ -791,6 +791,39 @@ app.get('/api/jobs', (req, res) => {
     });
 });
 
+// Dynamic Categories from existing jobs
+app.get('/api/job-categories', (req, res) => {
+    db.all("SELECT DISTINCT category, subCategory FROM jobs WHERE category IS NOT NULL AND category != ''", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Structure: { "CategoryName": ["Sub1", "Sub2"] }
+        const dynamicCats = {};
+        rows.forEach(row => {
+            if (!dynamicCats[row.category]) {
+                dynamicCats[row.category] = new Set();
+            }
+            if (row.subCategory) {
+                dynamicCats[row.category].add(row.subCategory);
+            }
+        });
+
+        // Convert Sets to Arrays
+        const result = {};
+        Object.keys(dynamicCats).forEach(cat => {
+            result[cat] = Array.from(dynamicCats[cat]);
+        });
+        
+        res.json(result);
+    });
+});
+
+app.get('/api/admin/contact-phones', (req, res) => {
+    db.all("SELECT DISTINCT contactPhone FROM jobs WHERE contactPhone IS NOT NULL AND contactPhone != ''", (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(r => r.contactPhone));
+    });
+});
+
 // New Endpoint for Filter Counts
 app.get('/api/jobs-filter-counts', (req, res) => {
     const sql = "SELECT type, experience FROM jobs WHERE status = 'OPEN'";
@@ -1100,4 +1133,4 @@ app.get('/api/admin/company/:id/full-data', (req, res) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.listen(PORT, '0.0.0.0', () => { console.log(`Server running on http://0.0.0.0:${PORT} (Accessible publicly via http://115.97.59.230:${PORT})`); });
+app.listen(PORT, '0.0.0.0', () => { console.log(`Server running on http://0.0.0.0:${PORT}`); });

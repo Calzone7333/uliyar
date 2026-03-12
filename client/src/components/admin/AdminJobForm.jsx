@@ -33,6 +33,47 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
         fieldName: ''
     });
 
+    const [allCategories, setAllCategories] = useState(JOB_CATEGORIES);
+    const [existingPhones, setExistingPhones] = useState([]);
+    const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/job-categories`);
+                if (res.ok) {
+                    const dynamicCats = await res.json();
+                    setAllCategories(prev => {
+                        const merged = { ...prev };
+                        Object.keys(dynamicCats).forEach(cat => {
+                            if (!merged[cat]) {
+                                merged[cat] = dynamicCats[cat];
+                            } else {
+                                const subSet = new Set([...merged[cat], ...dynamicCats[cat]]);
+                                merged[cat] = Array.from(subSet);
+                            }
+                        });
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+        const fetchPhones = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/admin/contact-phones`);
+                if (res.ok) {
+                    const phones = await res.json();
+                    setExistingPhones(phones);
+                }
+            } catch (err) { console.error("Error fetching phones:", err); }
+        };
+
+        fetchCategories();
+        fetchPhones();
+    }, []);
+
     const handleFileSelect = (file, fieldName) => {
         setJobData({ ...jobData, [fieldName]: file });
     };
@@ -131,8 +172,8 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
         });
     };
 
-    const categories = Object.keys(JOB_CATEGORIES);
-    const subCategories = jobData.category ? (JOB_CATEGORIES[jobData.category] || []) : [];
+    const categories = Object.keys(allCategories);
+    const subCategories = jobData.category ? (allCategories[jobData.category] || []) : [];
     const isEditing = !!initialData;
 
     return (
@@ -221,14 +262,43 @@ const AdminJobForm = ({ onPost, isPosting, initialData, onCancel }) => {
                                     <FileText size={12} /> Admin & Internal Details
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                    <InputGroup
-                                        label="Contact Phone"
-                                        icon={Phone}
-                                        type="tel"
-                                        value={jobData.contactPhone || ''}
-                                        onChange={v => setJobData({ ...jobData, contactPhone: v })}
-                                        placeholder="+91 98765 43210"
-                                    />
+                                    <div className="relative">
+                                        <InputGroup
+                                            label="Contact Phone"
+                                            icon={Phone}
+                                            type="tel"
+                                            value={jobData.contactPhone || ''}
+                                            onChange={v => {
+                                                setJobData({ ...jobData, contactPhone: v });
+                                                setShowPhoneSuggestions(true);
+                                            }}
+                                            onFocus={() => setShowPhoneSuggestions(true)}
+                                            onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 200)}
+                                            placeholder="+91 98765 43210"
+                                        />
+                                        {showPhoneSuggestions && jobData.contactPhone && existingPhones.filter(p => p.includes(jobData.contactPhone)).length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto overflow-x-hidden custom-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                {existingPhones
+                                                    .filter(p => p.includes(jobData.contactPhone))
+                                                    .map((phone, i) => (
+                                                        <button
+                                                            key={i}
+                                                            type="button"
+                                                            className="w-full px-4 py-3 text-left text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between group"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setJobData({ ...jobData, contactPhone: phone });
+                                                                setShowPhoneSuggestions(false);
+                                                            }}
+                                                        >
+                                                            <span>{phone}</span>
+                                                            <span className="text-[10px] font-bold text-slate-300 group-hover:text-blue-400 uppercase tracking-widest">Existing</span>
+                                                        </button>
+                                                    ))
+                                                }
+                                            </div>
+                                        )}
+                                    </div>
                                     <InputGroup
                                         label="Contact Email"
                                         icon={Mail}
@@ -483,24 +553,32 @@ const FileGroup = ({ label, onChange, onCrop, accept, required, existingUrl, sel
     );
 };
 
-const InputGroup = ({ label, icon: Icon, value, onChange, placeholder, type = "text", required }) => (
-    <div>
-        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center gap-1">
-            {label} {required && <span className="text-red-500 text-lg leading-none">*</span>}
-        </label>
-        <div className="relative">
-            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-                type={type}
-                required={required}
-                placeholder={placeholder}
-                className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm text-slate-700 font-medium placeholder:font-normal"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
+
+
+const InputGroup = (props) => {
+    const { label, icon: Icon, value, onChange, onFocus, onBlur, placeholder, type = "text", required } = props;
+    return (
+        <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1 flex items-center gap-1">
+                {label} {required && <span className="text-red-500 text-lg leading-none">*</span>}
+            </label>
+            <div className="relative">
+                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                    type={type}
+                    required={required}
+                    placeholder={placeholder}
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm text-slate-700 font-medium placeholder:font-normal bg-white"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    autoComplete="off"
+                />
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const SelectGroup = ({ label, value, onChange, options, disabled, placeholder, required }) => (
     <div>

@@ -7,6 +7,7 @@
   --color-secondary: #f0fdfa;
   --font-serif: "Outfit", sans-serif;
   --font-sans: "Outfit", sans-serif;
+  --font-roboto: "Roboto", sans-serif;
 }
 
 @layer base {
@@ -75,6 +76,7 @@
   mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
   webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
 }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -100,22 +102,41 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-} 
+}
 
 /* Animation classes for Admin Dashboard */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-in {
@@ -128,10 +149,28 @@
   animation-name: fadeIn;
 }
 
-.zoom-in, .zoom-in-95 {
+.zoom-in,
+.zoom-in-95 {
   animation-name: zoomIn;
 }
 
-.slide-in-from-bottom-4, .slide-in-from-bottom-8 {
+.slide-in-from-bottom-4,
+.slide-in-from-bottom-8 {
   animation-name: slideInUp;
+}
+.font-roboto,
+.font-roboto h1,
+.font-roboto h2,
+.font-roboto h3,
+.font-roboto h4,
+.font-roboto h5,
+.font-roboto h6,
+.font-roboto p,
+.font-roboto span,
+.font-roboto div,
+.font-roboto button,
+.font-roboto input,
+.font-roboto select,
+.font-roboto textarea {
+  font-family: "Roboto", sans-serif !important;
 }

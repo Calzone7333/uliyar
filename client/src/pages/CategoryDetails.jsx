@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Briefcase, ChevronRight } from 'lucide-react';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
+import { API_BASE_URL } from '../config';
 
 // Map icons roughly or use a generic one if not perfectly matched
 // We can import the same icons map or just use Briefcase for sub-items
@@ -31,7 +32,35 @@ const CategoryDetails = () => {
     const { categoryId } = useParams();
     const navigate = useNavigate();
     const decodedCategory = decodeURIComponent(categoryId);
-    const subCategories = JOB_CATEGORIES[decodedCategory];
+    const [allCategories, setAllCategories] = useState(JOB_CATEGORIES);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/job-categories`);
+                if (res.ok) {
+                    const dynamicCats = await res.json();
+                    setAllCategories(prev => {
+                        const merged = { ...prev };
+                        Object.keys(dynamicCats).forEach(cat => {
+                            if (!merged[cat]) {
+                                merged[cat] = dynamicCats[cat];
+                            } else {
+                                const subSet = new Set([...merged[cat], ...dynamicCats[cat]]);
+                                merged[cat] = Array.from(subSet);
+                            }
+                        });
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const subCategories = allCategories[decodedCategory];
     const Icon = categoryIcons[decodedCategory] || Briefcase;
 
     const [searchTerm, setSearchTerm] = useState("");

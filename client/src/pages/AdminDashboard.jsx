@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL, getImgUrl } from '../config';
 
 import { useAuth } from '../context/AuthContext';
-import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search, Menu } from 'lucide-react';
+import { X, ShieldAlert, Loader, Briefcase, PlusCircle, Trash2, Edit3, MapPin, IndianRupee, Calendar, Image, Search, Menu, Bell, LogOut, ChevronRight, Info, Home, Building2 } from 'lucide-react';
 
 // Components
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -17,7 +17,8 @@ import CompanyModal from '../components/admin/CompanyModal';
 import JobModal from '../components/admin/JobModal';
 import CompanyDetailsView from '../components/admin/CompanyDetailsView';
 import { exportJobsToExcel } from '../utils/exportToExcel';
-import { DownloadCloud } from 'lucide-react';
+import { DownloadCloud, TrendingUp, BarChart3, PieChart as PieIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
 
 const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -39,10 +40,13 @@ const AdminDashboard = () => {
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '' });
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const navigate = useNavigate();
     const location = useLocation();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
 
     const stats = {
         totalUsers: allUsers.length,
@@ -206,14 +210,33 @@ const AdminDashboard = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredAdminJobs = adminJobs.filter(job =>
-        job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job?.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+    const filteredAdminJobs = adminJobs.filter(job => {
+        const searchStr = searchTerm.toLowerCase();
+        return (
+            job?.title?.toLowerCase().includes(searchStr) ||
+            job?.company?.toLowerCase().includes(searchStr) ||
+            job?.location?.toLowerCase().includes(searchStr) ||
+            job?.category?.toLowerCase().includes(searchStr) ||
+            job?.subCategory?.toLowerCase().includes(searchStr) ||
+            job?.type?.toLowerCase().includes(searchStr) ||
+            job?.salary?.toLowerCase().includes(searchStr) ||
+            job?.description?.toLowerCase().includes(searchStr)
+        );
+    }).sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+
+    const totalPages = Math.ceil(filteredAdminJobs.length / itemsPerPage);
+    const paginatedJobs = filteredAdminJobs.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset pagination on search
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     return (
-        <div className="min-h-screen bg-slate-50/50 flex">
+        <div className="min-h-screen bg-slate-50/50 flex font-roboto">
             <AdminSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -230,37 +253,302 @@ const AdminDashboard = () => {
                 }}
             />
 
-            <main className="flex-1 lg:ml-64 p-4 md:p-8 overflow-y-auto h-screen custom-scrollbar">
-                {/* Header */}
-                <header className="flex justify-between items-center mb-6 md:mb-10">
-                    <div className="flex items-center gap-4">
+            <main className="flex-1 lg:ml-64 flex flex-col h-screen overflow-hidden">
+                <header className="bg-white border-b border-slate-200 px-6 lg:px-10 py-3 flex justify-between items-center z-30 shrink-0 shadow-sm">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="lg:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-lg"
+                    >
+                        <Menu size={20} />
+                    </button>
+
+                    <div className="flex items-center gap-2 ml-auto">
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-200 relative ${isNotificationOpen ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-slate-50 text-slate-600 border-slate-200 shadow-sm hover:border-primary/20 hover:text-primary'}`}
+                                title="Notifications"
+                            >
+                                <Bell size={14} className={stats.pendingTotal > 0 ? 'animate-bounce' : ''} strokeWidth={2.5} />
+                                {stats.pendingTotal > 0 && (
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
+                                )}
+                            </button>
+
+                            {isNotificationOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setIsNotificationOpen(false)}></div>
+                                    <div className="absolute right-0 top-full mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 z-50 animate-in zoom-in-95 duration-200 origin-top-right">
+                                        <div className="p-3 border-b border-slate-50 flex items-center justify-between">
+                                            <h4 className="font-bold text-slate-800 text-sm">Notifications</h4>
+                                            <span className="bg-primary/10 text-primary text-[9px] font-bold px-2 py-0.5 rounded-full uppercase truncate max-w-[100px]">{stats.pendingTotal} Pending</span>
+                                        </div>
+                                        <div className="max-h-96 overflow-y-auto custom-scrollbar py-2">
+                                            {stats.pendingTotal > 0 ? (
+                                                <div className="space-y-1">
+                                                    {pendingResumes.length > 0 && (
+                                                        <button
+                                                            onClick={() => { setActiveTab('resumes'); setIsNotificationOpen(false); }}
+                                                            className="w-full p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-3 text-left group"
+                                                        >
+                                                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                <ShieldAlert size={16} />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-bold text-slate-800">{pendingResumes.length} Resumes Pending</p>
+                                                                <p className="text-[9px] text-slate-400 mt-0.5">Verification required</p>
+                                                            </div>
+                                                            <ChevronRight size={12} className="text-slate-300 group-hover:text-primary transition-colors" />
+                                                        </button>
+                                                    )}
+                                                    {pendingCompanies.length > 0 && (
+                                                        <button
+                                                            onClick={() => { setActiveTab('companies'); setIsNotificationOpen(false); }}
+                                                            className="w-full p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-3 text-left group"
+                                                        >
+                                                            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                <Briefcase size={16} />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-bold text-slate-800">{pendingCompanies.length} Companies Pending</p>
+                                                                <p className="text-[9px] text-slate-400 mt-0.5">Verification required</p>
+                                                            </div>
+                                                            <ChevronRight size={12} className="text-slate-300 group-hover:text-primary transition-colors" />
+                                                        </button>
+                                                    )}
+                                                    {pendingJobs.length > 0 && (
+                                                        <button
+                                                            onClick={() => { setActiveTab('jobs'); setIsNotificationOpen(false); }}
+                                                            className="w-full p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-3 text-left group"
+                                                        >
+                                                            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                <PlusCircle size={16} />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-bold text-slate-800">{pendingJobs.length} Jobs Pending</p>
+                                                                <p className="text-[9px] text-slate-400 mt-0.5">Verification required</p>
+                                                            </div>
+                                                            <ChevronRight size={12} className="text-slate-300 group-hover:text-primary transition-colors" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="p-6 text-center">
+                                                    <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                        <Info size={16} className="text-slate-300" />
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-slate-400">All cleared!</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                         <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="lg:hidden p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-600"
+                            onClick={() => navigate('/')}
+                            className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-primary-dark border border-slate-200 transition-all shadow-sm"
+                            title="Back to Home"
                         >
-                            <Menu size={20} />
+                            <Home className="w-3.5 h-3.5" strokeWidth={2.5} />
                         </button>
-                        <div>
-                            <h1 className="text-xl md:text-3xl font-bold text-slate-800 tracking-tight">
-                                {activeTab === 'dashboard' && 'Dashboard Overview'}
+                        <button
+                            onClick={() => {
+                                if (logout) logout();
+                                navigate('/');
+                            }}
+                            className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-red-500 border border-slate-200 transition-all shadow-sm relative"
+                            title="Log Out"
+                        >
+                            <LogOut className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </button>
+
+                        <div className="relative group ml-1">
+                            <button
+                                className="w-8 h-8 rounded-full focus:outline-none transition-all shadow-[0_0_0_2px_theme(colors.slate.100)] hover:shadow-[0_0_0_2px_theme(colors.primary)] flex items-center justify-center overflow-hidden bg-primary text-white font-black text-xs cursor-default"
+                            >
+                                {(user?.fullName || user?.email || 'A').charAt(0).toUpperCase()}
+                            </button>
+                            {/* Hover tooltip */}
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-100 shadow-xl rounded-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Signed in as</p>
+                                <p className="text-sm font-black text-slate-800 truncate">{user?.fullName || 'Administrator'}</p>
+                                <p className="text-xs text-slate-500 truncate mt-0.5">{user?.email}</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar bg-slate-50/30">
+                    <div className="max-w-7xl mx-auto pb-20">
+                    {/* Page Titles based on Active Tab */}
+                    {activeTab !== 'dashboard' && activeTab !== 'admin_jobs' && activeTab !== 'job_applications' && (
+                        <div className="mb-8 mt-6">
+                            <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
                                 {activeTab === 'resumes' && 'Verify Resumes'}
                                 {activeTab === 'companies' && 'Verify Companies'}
                                 {activeTab === 'jobs' && 'Verify Employer Jobs'}
                                 {activeTab === 'users_list' && 'All Users Database'}
                                 {activeTab === 'companies_list' && 'All Companies Database'}
                                 {activeTab === 'post_job' && (editJob ? 'Edit Admin Job' : 'Post Admin Job')}
-                                {activeTab === 'admin_jobs' && 'My Admin Jobs'}
-                                {activeTab === 'job_applications' && 'Applications for Admin Jobs'}
                             </h1>
-                            <p className="text-slate-500 mt-1 text-xs md:text-sm">System Administration Panel</p>
+                            <p className="text-slate-500 mt-1 text-sm">System Administration Panel</p>
                         </div>
-                    </div>
-                </header>
+                    )}
 
-                <div className="max-w-7xl mx-auto pb-20">
                     {activeTab === 'dashboard' && (
                         <div className="animate-in fade-in duration-500">
+                            <div className="mb-8 mt-6">
+                                <h1 className="text-2xl md:text-4xl font-bold text-slate-800 tracking-tight">Dashboard Overview</h1>
+                                <p className="text-slate-500 mt-1 text-sm font-medium">Welcome back, {user?.fullName || 'Admin'}</p>
+                            </div>
+
                             <DashboardStats stats={stats} />
+                            
+                            {/* Charts Section */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                                {/* Daily Job Postings Area Chart */}
+                                <div className="lg:col-span-8 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h3 className="text-base font-bold text-slate-800">Job Posting Growth</h3>
+                                            <p className="text-xs text-slate-400">Daily job uploads tracking</p>
+                                        </div>
+                                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                            <TrendingUp size={18} />
+                                        </div>
+                                    </div>
+                                    <div className="h-[250px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={(() => {
+                                                const last14Days = Array.from({ length: 14 }, (_, i) => {
+                                                    const d = new Date();
+                                                    d.setDate(d.getDate() - (13 - i));
+                                                    return {
+                                                        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                                        fullDate: d.toISOString().split('T')[0],
+                                                        count: 0
+                                                    };
+                                                });
+                                                
+                                                adminJobs.forEach(job => {
+                                                    const jobDate = new Date(job.postedAt).toISOString().split('T')[0];
+                                                    const dayObj = last14Days.find(d => d.fullDate === jobDate);
+                                                    if (dayObj) dayObj.count++;
+                                                });
+                                                
+                                                return last14Days;
+                                            })()}>
+                                                <defs>
+                                                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                                                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                                <Tooltip 
+                                                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                                                />
+                                                <Area type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* User Categories Pie Chart */}
+                                <div className="lg:col-span-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-base font-bold text-slate-800">User Types</h3>
+                                        <PieIcon size={18} className="text-slate-400" />
+                                    </div>
+                                    <div className="h-[250px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={[
+                                                        { name: 'Candidates', value: allUsers.filter(u => u.role === 'candidate').length },
+                                                        { name: 'Employers', value: allUsers.filter(u => u.role === 'employer').length },
+                                                        { name: 'Admins', value: allUsers.filter(u => u.role === 'admin').length }
+                                                    ]}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                >
+                                                    {['#2563eb', '#10b981', '#f59e0b'].map((color, index) => (
+                                                        <Cell key={`cell-${index}`} fill={color} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">
+                                        <div><div className="w-2 h-2 rounded-full bg-blue-600 mx-auto mb-1"></div>Cand.</div>
+                                        <div><div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto mb-1"></div>Emp.</div>
+                                        <div><div className="w-2 h-2 rounded-full bg-amber-500 mx-auto mb-1"></div>Admin</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Second Charts Row */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                                {/* Daily User Registrations Area Chart */}
+                                <div className="lg:col-span-12 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h3 className="text-base font-bold text-slate-800">User Acquisition</h3>
+                                            <p className="text-xs text-slate-400">Daily new user registrations tracking</p>
+                                        </div>
+                                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                                            <TrendingUp size={18} />
+                                        </div>
+                                    </div>
+                                    <div className="h-[250px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={(() => {
+                                                const last14Days = Array.from({ length: 14 }, (_, i) => {
+                                                    const d = new Date();
+                                                    d.setDate(d.getDate() - (13 - i));
+                                                    return {
+                                                        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                                        fullDate: d.toISOString().split('T')[0],
+                                                        count: 0
+                                                    };
+                                                });
+                                                
+                                                allUsers.forEach(user => {
+                                                    if (!user.createdAt) return;
+                                                    const userDate = new Date(user.createdAt).toISOString().split('T')[0];
+                                                    const dayObj = last14Days.find(d => d.fullDate === userDate);
+                                                    if (dayObj) dayObj.count++;
+                                                });
+                                                
+                                                return last14Days;
+                                            })()}>
+                                                <defs>
+                                                    <linearGradient id="colorUserCount" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                                <Tooltip 
+                                                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                                                />
+                                                <Area type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorUserCount)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div>
                                     <h3 className="font-bold text-slate-700 mb-6">Recent Resumes</h3>
@@ -300,130 +588,180 @@ const AdminDashboard = () => {
                     )}
 
                     {activeTab === 'admin_jobs' && (
-                        <div className="animate-in fade-in duration-300">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div className="animate-in fade-in duration-500">
+                            {/* Header Section */}
+                            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-800">Admin Posted Jobs ({filteredAdminJobs.length})</h3>
-                                    <p className="text-slate-500 text-sm mt-1">Manage jobs posted directly by the administration.</p>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+                                        <div className="p-2 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-200">
+                                            <Briefcase size={22} />
+                                        </div>
+                                        Admin Posted Jobs
+                                        <span className="bg-slate-100 text-slate-500 text-xs px-2.5 py-1 rounded-full font-bold ml-2">
+                                            {filteredAdminJobs.length}
+                                        </span>
+                                    </h3>
+                                    <p className="text-slate-400 text-sm mt-2 font-medium ml-12">
+                                        Manage your organization's direct job postings
+                                    </p>
                                 </div>
 
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <div className="relative flex-1 md:w-64">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                                    <div className="relative w-full sm:w-80 group">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                                         <input
                                             type="text"
-                                            placeholder="Search jobs..."
+                                            placeholder="Search by title, location..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm shadow-sm"
+                                            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm bg-white shadow-sm"
                                         />
                                     </div>
-                                    <button
-                                        onClick={handleExport}
-                                        disabled={isExporting}
-                                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-emerald-200 transition-all active:scale-95 whitespace-nowrap"
-                                    >
-                                        {isExporting ? <Loader className="animate-spin" size={18} /> : <DownloadCloud size={18} />}
-                                        {isExporting ? 'Exporting...' : 'Export Data'}
-                                    </button>
-                                    <button onClick={() => { setEditJob(null); setActiveTab('post_job'); }} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap">
-                                        <PlusCircle size={18} /> Post New
-                                    </button>
+                                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                                        <button
+                                            onClick={handleExport}
+                                            disabled={isExporting}
+                                            className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
+                                        >
+                                            {isExporting ? <Loader className="animate-spin" size={18} /> : <DownloadCloud size={18} />}
+                                            Export
+                                        </button>
+                                        <button 
+                                            onClick={() => { setEditJob(null); setActiveTab('post_job'); }} 
+                                            className="flex-1 sm:flex-none px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
+                                        >
+                                            <PlusCircle size={18} /> 
+                                            Post New Job
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredAdminJobs.length > 0 ? filteredAdminJobs.map(job => (
-                                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col group relative overflow-hidden h-full">
-
-                                        {/* Actions Overlay */}
-                                        <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
-                                            <button onClick={() => startEditJob(job)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors" title="Edit Job">
-                                                <Edit3 size={14} />
-                                            </button>
-                                            <div className="w-px h-3 bg-slate-200"></div>
-                                            <button onClick={() => deleteAdminJob(job.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete Job">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-
-                                        {/* Job Header */}
-                                        <div className="mb-3 pr-8">
-                                            <h4 className="text-base font-bold text-slate-800 leading-tight mb-0.5 line-clamp-1" title={job.title}>{job.title}</h4>
-                                            <p className="text-xs font-medium text-slate-500 line-clamp-1">{job.company || 'No Company Name'}</p>
-                                        </div>
-
-                                        {/* Details Tags */}
-                                        <div className="flex flex-wrap gap-1.5 mb-3">
-                                            <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 text-[9px] font-bold uppercase tracking-wider border border-slate-100 line-clamp-1 max-w-full truncate">{job.category}</span>
-                                            {job.type && <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-wider border border-blue-100 whitespace-nowrap">{job.type}</span>}
-                                        </div>
-
-                                        {/* Info Grid */}
-                                        <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-xs text-slate-500 mb-3">
-                                            <div className="flex items-center gap-1.5">
-                                                <MapPin size={12} className="text-slate-400 shrink-0" />
-                                                <span className="truncate" title={job.location}>{job.location}</span>
+                            {/* Jobs List - Compact Design */}
+                            <div className="flex flex-col gap-4">
+                                {paginatedJobs.length > 0 ? (
+                                    paginatedJobs.map((job, idx) => (
+                                        <div 
+                                            key={job.id} 
+                                            className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-500/30 transition-all duration-300 p-4 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden"
+                                            style={{ animationDelay: `${idx * 50}ms` }}
+                                        >
+                                            {/* Left side: Basic Info */}
+                                            <div className="flex items-center gap-4 flex-1 w-full">
+                                                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors shrink-0">
+                                                    <Briefcase size={20} strokeWidth={2} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-base font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors" title={job.title}>{job.title}</h4>
+                                                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 font-medium">
+                                                        <span className="flex items-center gap-1"><Building2 size={12} /> {job.company || 'Uliyar'}</span>
+                                                        <span className="flex items-center gap-1"><MapPin size={12} /> {job.location}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <IndianRupee size={12} className="text-slate-400 shrink-0" />
-                                                <span className="truncate">{job.salary}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 col-span-2">
-                                                <Calendar size={12} className="text-slate-400 shrink-0" />
-                                                <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
 
-                                        {/* Footer - Images */}
-                                        <div className="mt-auto pt-3 border-t border-slate-50">
-                                            <div className="flex gap-2">
-                                                {job.socialMediaImage ? (
-                                                    <div
-                                                        className="relative h-16 w-full rounded-lg overflow-hidden border border-slate-100 cursor-pointer group/img"
-                                                        onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) })}
-                                                    >
-                                                        <img src={getImgUrl(job.socialMediaImage)} alt="Social" className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
-                                                            <span className="text-[8px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded opacity-0 group-hover/img:opacity-100 transition-opacity backdrop-blur-sm">Social</span>
+                                            {/* Middle side: Category & Salary */}
+                                            <div className="flex items-center gap-4 shrink-0 w-full md:w-auto">
+                                                <div className="flex flex-col gap-1 items-start md:items-end min-w-[100px]">
+                                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Category</span>
+                                                    <span className="bg-slate-50 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-slate-100 max-w-[120px] truncate">{job.category}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1 items-start md:items-end min-w-[80px]">
+                                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Salary</span>
+                                                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-0.5"><IndianRupee size={10} />{job.salary}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Right side: Previews */}
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex -space-x-2 group/avatars">
+                                                    {job.socialMediaImage ? (
+                                                        <div 
+                                                            className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden shadow-sm cursor-pointer hover:-translate-y-1 transition-transform relative z-10"
+                                                            onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.socialMediaImage) })}
+                                                            title="Social Media Image"
+                                                        >
+                                                            <img src={getImgUrl(job.socialMediaImage)} className="w-full h-full object-cover" />
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-300">
-                                                        <Image size={12} />
-                                                        <span className="text-[8px] font-bold">No Social</span>
-                                                    </div>
-                                                )}
-
-                                                {job.newspaperImage ? (
-                                                    <div
-                                                        className="relative h-16 w-full rounded-lg overflow-hidden border border-slate-100 cursor-pointer group/img"
-                                                        onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) })}
-                                                    >
-                                                        <img src={getImgUrl(job.newspaperImage)} alt="Paper" className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
-                                                            <span className="text-[8px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded opacity-0 group-hover/img:opacity-100 transition-opacity backdrop-blur-sm">Paper</span>
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-lg border-2 border-white bg-slate-50 flex items-center justify-center text-slate-300 shadow-sm relative z-0">
+                                                            <Image size={14} />
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-300">
-                                                        <Image size={12} />
-                                                        <span className="text-[8px] font-bold">No Paper</span>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                    {job.newspaperImage ? (
+                                                        <div 
+                                                            className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden shadow-sm cursor-pointer hover:-translate-y-1 transition-transform relative z-20"
+                                                            onClick={() => setImageModal({ isOpen: true, src: getImgUrl(job.newspaperImage) })}
+                                                            title="Newspaper Image"
+                                                        >
+                                                            <img src={getImgUrl(job.newspaperImage)} className="w-full h-full object-cover" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-lg border-2 border-white bg-slate-100 flex items-center justify-center text-slate-300 shadow-sm relative z-0">
+                                                            <Image size={14} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div className="flex items-center gap-2 pl-4 border-l border-slate-50 shrink-0 w-full md:w-auto justify-end">
+                                                <button 
+                                                    onClick={() => startEditJob(job)} 
+                                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                >
+                                                    <Edit3 size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => deleteAdminJob(job.id)} 
+                                                    className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
-                                )) : (
-                                    <div className="col-span-full py-16 text-center text-slate-400 bg-white rounded-[2rem] border border-dashed border-slate-200">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Briefcase size={24} className="text-slate-300" />
-                                        </div>
-                                        <p className="font-medium">No admin jobs posted yet.</p>
-                                        <button onClick={() => setActiveTab('post_job')} className="text-blue-600 font-bold hover:underline mt-2 text-sm">Post your first job</button>
+                                    ))
+                                ) : (
+                                    <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                                        <p className="text-slate-400 font-medium">No results found.</p>
                                     </div>
                                 )}
                             </div>
+
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="mt-10 flex items-center justify-center gap-2">
+                                    <button 
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
+                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all"
+                                    >
+                                        <ChevronRight size={20} className="rotate-180" />
+                                    </button>
+                                    
+                                    <div className="flex items-center gap-1.5">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${currentPage === page 
+                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                                                    : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button 
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
+                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -481,6 +819,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     )}
+                    </div>
                 </div>
             </main>
 

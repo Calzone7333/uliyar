@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { JOB_CATEGORIES } from '../constants/jobCategories';
 import { useTranslation } from 'react-i18next';
+import { API_BASE_URL } from '../config';
 
 const categoryIcons = {
     "Accounts, Finance, Admin & HR": Calculator,
@@ -26,6 +27,34 @@ const categoryIcons = {
 
 const Categories = () => {
     const { t } = useTranslation();
+    const [allCategories, setAllCategories] = React.useState(JOB_CATEGORIES);
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/job-categories`);
+                if (res.ok) {
+                    const dynamicCats = await res.json();
+                    setAllCategories(prev => {
+                        const merged = { ...prev };
+                        Object.keys(dynamicCats).forEach(cat => {
+                            if (!merged[cat]) {
+                                merged[cat] = dynamicCats[cat];
+                            } else {
+                                const subSet = new Set([...merged[cat], ...dynamicCats[cat]]);
+                                merged[cat] = Array.from(subSet);
+                            }
+                        });
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     return (
         <div className="min-h-screen bg-slate-50 py-20 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="max-w-7xl mx-auto">
@@ -46,9 +75,9 @@ const Categories = () => {
 
                 {/* Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.keys(JOB_CATEGORIES).map((category, index) => {
+                    {Object.keys(allCategories).map((category, index) => {
                         const Icon = categoryIcons[category] || Briefcase;
-                        const subCats = JOB_CATEGORIES[category].slice(0, 3).join(", ") + "...";
+                        const subCats = allCategories[category].slice(0, 3).join(", ") + "...";
 
                         return (
                             <Link

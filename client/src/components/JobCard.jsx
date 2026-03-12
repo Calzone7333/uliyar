@@ -4,6 +4,7 @@ import ApplyJobModal from './ApplyJobModal';
 import JobDetailsModal from './JobDetailsModal';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
+import { getImgUrl } from '../config';
 
 const JobCard = ({ job, index = 0 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,11 +55,16 @@ const JobCard = ({ job, index = 0 }) => {
                 {/* Header: Logo & Title */}
                 <div className="flex justify-between items-start gap-3">
                     <div className="flex gap-3.5">
-                        <div className="w-[42px] h-[42px] flex-shrink-0 rounded-[8px] flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-sm p-1">
-                            {job.logo ? (
-                                <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
+                        <div className="w-[42px] h-[42px] flex-shrink-0 rounded-[8px] flex items-center justify-center overflow-hidden bg-slate-50 border border-slate-100 shadow-sm p-1">
+                            {job.logo || job.socialMediaImage ? (
+                                <img 
+                                    src={getImgUrl(job.logo || job.socialMediaImage)} 
+                                    alt={job.company} 
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.target.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>'; }}
+                                />
                             ) : (
-                                <img src="/company.png" alt="Company Fallback" className="w-full h-full object-contain" />
+                                <Building2 size={24} className="text-slate-300" />
                             )}
                         </div>
                         <div className="flex flex-col pt-0.5">
@@ -90,14 +96,11 @@ const JobCard = ({ job, index = 0 }) => {
                         <span className="flex items-center gap-1.5 bg-[#F1F5F9] text-slate-600 text-[11px] font-[500] px-2.5 py-1 rounded-[6px]">
                             <Clock size={12} className="text-slate-400" strokeWidth={2.5} /> {job.type || "Not Applicable"}
                         </span>
-                        <span className="flex items-center gap-1.5 bg-[#F1F5F9] text-slate-600 text-[11px] font-[500] px-2.5 py-1 rounded-[6px]">
-                            <Building2 size={12} className="text-slate-400" strokeWidth={2.5} /> Basic English
-                        </span>
                     </div>
 
                     <button
                         onClick={handleApplyClick}
-                        className="self-start sm:self-auto shrink-0 px-4 py-1.5 bg-[#F0FDFA] hover:bg-[#0D9488] text-[#0D9488] hover:text-white border border-[#0D9488]/20 hover:border-[#0D9488] rounded-[6px] text-[12px] font-[600] transition-all"
+                        className="self-start sm:self-auto shrink-0 px-4 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-600/20 hover:border-indigo-600 rounded-[6px] text-[12px] font-[600] transition-all"
                     >
                         Apply Now
                     </button>
