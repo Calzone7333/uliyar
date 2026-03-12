@@ -734,31 +734,57 @@ const AdminDashboard = () => {
                                     <button 
                                         disabled={currentPage === 1}
                                         onClick={() => setCurrentPage(prev => prev - 1)}
-                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all"
+                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-[#0D9488] hover:border-[#0D9488] disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all"
                                     >
-                                        <ChevronRight size={20} className="rotate-180" />
+                                        <ChevronRight size={18} className="rotate-180" />
                                     </button>
                                     
                                     <div className="flex items-center gap-1.5">
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                            <button
-                                                key={page}
-                                                onClick={() => setCurrentPage(page)}
-                                                className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${currentPage === page 
-                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                                                    : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600'}`}
-                                            >
-                                                {page}
-                                            </button>
-                                        ))}
+                                        {(() => {
+                                            const pages = [];
+                                            if (totalPages <= 7) {
+                                                for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                            } else {
+                                                if (currentPage <= 4) {
+                                                    for (let i = 1; i <= 5; i++) pages.push(i);
+                                                    pages.push('...');
+                                                    pages.push(totalPages);
+                                                } else if (currentPage >= totalPages - 3) {
+                                                    pages.push(1);
+                                                    pages.push('...');
+                                                    for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+                                                } else {
+                                                    pages.push(1);
+                                                    pages.push('...');
+                                                    for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+                                                    pages.push('...');
+                                                    pages.push(totalPages);
+                                                }
+                                            }
+                                            return pages.map((page, idx) =>
+                                                page === '...' ? (
+                                                    <span key={`ellipsis-${idx}`} className="w-10 h-10 flex items-center justify-center text-slate-400 text-sm font-bold select-none">...</span>
+                                                ) : (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${currentPage === page 
+                                                            ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20' 
+                                                            : 'bg-white border border-slate-200 text-slate-500 hover:border-[#0D9488] hover:text-[#0D9488]'}`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                )
+                                            );
+                                        })()}
                                     </div>
 
                                     <button 
                                         disabled={currentPage === totalPages}
                                         onClick={() => setCurrentPage(prev => prev + 1)}
-                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all"
+                                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-[#0D9488] hover:border-[#0D9488] disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all"
                                     >
-                                        <ChevronRight size={20} />
+                                        <ChevronRight size={18} />
                                     </button>
                                 </div>
                             )}
